@@ -472,20 +472,7 @@ export default function Recibos() {
             placeholder="Todas las zonas"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Estado de pago
-          </label>
-          <Select
-            defaultValue={estadoPagoFiltro}
-            onChange={(value) => typeof value === 'string' ? setEstadoPagoFiltro(value) : setEstadoPagoFiltro('')}
-            options={[
-              { value: 'pagado', label: 'Pagados' },
-              { value: 'pendiente', label: 'Pendientes' }
-            ]}
-            placeholder="Todos los estados"
-          />
-        </div>
+        
         
       </div>
       
