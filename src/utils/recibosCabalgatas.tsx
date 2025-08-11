@@ -26,8 +26,8 @@ export function RecibosCabalgatas({ papeleta }: RecibosCabalgatasProps) {
   };
 
   return (
-    <PDFViewer>
-      <Document>
+    <PDFViewer style={{ width: '100%', height: '90vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <Document style={{ width: '100%', height: '100%' }}>
         <Page
           size="A4"
           style={{

@@ -38,8 +38,9 @@ export const recibosService = {
   },
 
   // Crear nuevo recibo
-  async createRecibo(recibo: { socio_id: number; importe: number; concepto?: string }): Promise<{success: boolean, message: string, record: Recibo}> {
+  async createRecibo(recibo: { socio_id: number; importe: number; concepto?: string; zona?: string; direccion?: string }): Promise<{success: boolean, message: string, record: Recibo}> {
     try {
+      console.log('recibo', recibo);
       const response = await fetch(`${API_BASE_URL}/table/Recibos`, {
         method: 'POST',
         headers: {

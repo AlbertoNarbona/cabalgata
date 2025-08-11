@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RecibosCabalgatas } from '../../utils/recibosCabalgatas.tsx';
 import { sociosService, Socio } from '../../services/sociosService';
 import { recibosService, Recibo as ReciboDB } from '../../services/recibosService';
+import { pagosService, Pago } from '../../services/pagosService';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../../components/ui/table';
 import Button from '../../components/ui/button/Button';
 import InputField from '../../components/form/input/InputField';
@@ -25,6 +26,7 @@ export default function Recibos() {
   const [recibos, setRecibos] = useState<Recibo[]>([]);
   const [recibosDB, setRecibosDB] = useState<ReciboDB[]>([]);
   const [recibosFiltrados, setRecibosFiltrados] = useState<ReciboDB[]>([]);
+  const [pagos, setPagos] = useState<Pago[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -36,6 +38,12 @@ export default function Recibos() {
   
   // Modal para editar recibos
   const modalEditarRecibo = useModal();
+  
+  // Modal para agregar pagos
+  const modalAgregarPago = useModal();
+  
+  // Modal para ver pagos de un recibo
+  const modalVerPagos = useModal();
   
   // Estados para el formulario de recibo
   const [nuevoRecibo, setNuevoRecibo] = useState<Partial<Recibo>>({
@@ -59,18 +67,31 @@ export default function Recibos() {
     concepto: ''
   });
 
+  // Estado para pagos
+  const [reciboSeleccionado, setReciboSeleccionado] = useState<ReciboDB | null>(null);
+  const [nuevoPago, setNuevoPago] = useState<{
+    cantidad: number;
+    fecha_pago: string;
+  }>({
+    cantidad: 0,
+    fecha_pago: new Date().toISOString().split('T')[0]
+  });
+  const [pagosRecibo, setPagosRecibo] = useState<Pago[]>([]);
+
   // Cargar socios y recibos al montar el componente
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         setLoading(true);
-        const [sociosData, recibosData] = await Promise.all([
+        const [sociosData, recibosData, pagosData] = await Promise.all([
           sociosService.getSocios(),
-          recibosService.getRecibos()
+          recibosService.getRecibos(),
+          pagosService.getPagos()
         ]);
         setSocios(sociosData);
         setRecibosDB(recibosData);
         setRecibosFiltrados(recibosData); // Inicializar con todos los recibos
+        setPagos(pagosData);
         setError(null);
       } catch (err) {
         setError('Error al cargar los datos');
@@ -114,12 +135,15 @@ export default function Recibos() {
   // Función para agregar recibo
   const agregarRecibo = async () => {
     if (nuevoRecibo.nombre && nuevoRecibo.importe && nuevoRecibo.socioId) {
+      console.log('nuevoRecibo', nuevoRecibo);
       try {
         // Crear recibo en la base de datos
         const {record} = await recibosService.createRecibo({
           socio_id: parseInt(nuevoRecibo.socioId),
           importe: nuevoRecibo.importe,
-          concepto: nuevoRecibo.concepto || undefined
+          concepto: nuevoRecibo.concepto || undefined,
+          zona: nuevoRecibo.zona || undefined,
+          direccion: nuevoRecibo.direccion || undefined
         });
 
         // Agregar a la lista local
@@ -187,7 +211,7 @@ export default function Recibos() {
             ...reciboDB,
             importe: valor as number
           });
-          setRecibosDB(recibosDB.map(r => r.id === parseInt(id) ? reciboActualizadoDB : r));
+          setRecibosDB(recibosDB.map(r => r.id === parseInt(id) ? reciboActualizadoDB.record : r));
         }
       }
     } catch (err) {
@@ -201,6 +225,26 @@ export default function Recibos() {
     setRecibos([]);
     setMostrandoRecibos(false);
   };
+
+  const agregarTodosLosRecibos = async () => {
+    
+    console.log('recibosDB', recibosDB);
+    const recibosConvertidos = recibosDB?.map(r => {
+      const socio = socios.find(s => s.id === r.socio_id);
+      return {
+        id: r?.id.toString(),
+        nombre: socio?.nombre || '',
+        direccion: socio?.direccion || '',
+        zona: socio?.zona || '',
+        importe: r?.importe,
+        socioId: r.socio_id.toString(),
+        concepto: r.concepto
+      };
+    }) || [];
+    setRecibos(recibosConvertidos);
+  };
+
+  console.log('recibos', recibos);
 
   // Función para abrir modal de edición
   const abrirEditarRecibo = (recibo: ReciboDB) => {
@@ -245,6 +289,88 @@ export default function Recibos() {
       setError('Error al actualizar el recibo');
       console.error('Error actualizando recibo:', err);
     }
+  };
+
+  // Función para abrir modal de agregar pago
+  const abrirAgregarPago = (recibo: ReciboDB) => {
+    setReciboSeleccionado(recibo);
+    setNuevoPago({
+      cantidad: 0,
+      fecha_pago: new Date().toISOString().split('T')[0]
+    });
+    modalAgregarPago.openModal();
+  };
+
+  // Función para agregar pago
+  const agregarPago = async () => {
+    if (!reciboSeleccionado || nuevoPago.cantidad <= 0) {
+      toast.error('Por favor ingrese una cantidad válida');
+      return;
+    }
+
+    try {
+      const {record} = await pagosService.createPago({
+        recibo_id: reciboSeleccionado?.id,
+        socio_id: reciboSeleccionado?.socio_id,
+        fecha_pago: nuevoPago.fecha_pago,
+        cantidad: nuevoPago.cantidad
+      });
+
+      // Actualizar la lista de pagos
+      setPagos([...pagos, record]);
+      
+      // Limpiar formulario y cerrar modal
+      setNuevoPago({
+        cantidad: 0,
+        fecha_pago: new Date().toISOString().split('T')[0]
+      });
+      modalAgregarPago.closeModal();
+      setReciboSeleccionado(null);
+      
+      toast.success('Pago agregado correctamente');
+    } catch (err) {
+      toast.error('Error al agregar el pago');
+      console.error('Error agregando pago:', err);
+    }
+  };
+
+  // Función para ver pagos de un recibo
+  const verPagosRecibo = async (recibo: ReciboDB) => {
+    try {
+      const pagosDelRecibo = await pagosService.getPagosByRecibo(recibo.id);
+      setPagosRecibo(pagosDelRecibo);
+      setReciboSeleccionado(recibo);
+      modalVerPagos.openModal();
+    } catch (err) {
+      toast.error('Error al cargar los pagos');
+      console.error('Error cargando pagos:', err);
+    }
+  };
+
+  // Función para eliminar pago
+  const eliminarPago = async (pagoId: number) => {
+    try {
+      await pagosService.deletePago(pagoId);
+      setPagos(pagos.filter(p => p.id !== pagoId));
+      setPagosRecibo(pagosRecibo.filter(p => p.id !== pagoId));
+      toast.success('Pago eliminado correctamente');
+    } catch (err) {
+      toast.error('Error al eliminar el pago');
+      console.error('Error eliminando pago:', err);
+    }
+  };
+
+  // Función para calcular total pagado de un recibo
+  const getTotalPagado = (reciboId: number): number => {
+    return pagos
+      .filter(pago => pago.recibo_id === reciboId)
+      .reduce((total, pago) => total + Number(pago.cantidad), 0);
+  };
+
+  // Función para verificar si un recibo está pagado
+  const isReciboPagado = (recibo: ReciboDB): boolean => {
+    const totalPagado = getTotalPagado(recibo.id);
+    return totalPagado >= recibo.importe;
   };
 
   // Mostrar loading
@@ -330,6 +456,15 @@ export default function Recibos() {
             className="w-full"
           >
             Limpiar Recibos
+          </Button>
+        </div>
+        <div className="flex items-end">
+          <Button 
+            onClick={agregarTodosLosRecibos}
+            variant="outline"
+            className="w-full"
+          >
+            Agregar todos los recibos
           </Button>
         </div>
       </div>
@@ -458,8 +593,10 @@ export default function Recibos() {
               <Table className="w-full">
                 <TableHeader>
                   <TableRow className="border-b border-gray-50 dark:border-gray-800">
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Socio ID</TableCell>
+                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Socio</TableCell>
                     <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe (€)</TableCell>
+                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Pagado (€)</TableCell>
+                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</TableCell>
                     <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Concepto</TableCell>
                     <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</TableCell>
                   </TableRow>
@@ -486,23 +623,49 @@ export default function Recibos() {
                           </div>
                         </TableCell>
                         <TableCell className="p-2 text-sm font-medium text-gray-900 dark:text-white">
-                          {recibo?.importe ? Number(recibo.importe).toFixed(2) : '0.00'} €
+                          {recibo?.importe ? Number(recibo.importe) : '0.00'} €
+                        </TableCell>
+                        <TableCell className="p-2 text-sm font-medium text-gray-900 dark:text-white">
+                          {getTotalPagado(recibo.id)} €
+                        </TableCell>
+                        <TableCell className="p-2">
+                          {isReciboPagado(recibo) ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              Pagado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                              Pendiente
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
                           {recibo.concepto}
                         </TableCell>
                         
                         <TableCell className="p-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => abrirAgregarPago(recibo)}
+                              className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                            >
+                              + Pago
+                            </button>
+                            <button
+                              onClick={() => verPagosRecibo(recibo)}
+                              className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50"
+                            >
+                              Ver Pagos
+                            </button>
                             <button
                               onClick={() => abrirEditarRecibo(recibo)}
-                              className="inline-flex items-center rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                              className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
                             >
                               Editar
                             </button>
                             <button
                               onClick={() => eliminarRecibo(recibo.id.toString())}
-                              className="inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                              className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                             >
                               Eliminar
                             </button>
@@ -520,17 +683,20 @@ export default function Recibos() {
 
       {/* Vista de Recibos PDF */}
       {mostrandoRecibos && recibos.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6 flex flex-col items-center ">
           <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
             Vista Previa de Recibos
           </h3>
-          <RecibosCabalgatas papeleta={recibos.map(recibo => ({
+          <RecibosCabalgatas papeleta={recibos.map(recibo => {
+            const nombre = socios.find(s => s.id === parseInt(recibo.socioId || '0'))?.nombre;
+            
+            return ({
             id: recibo.id,
-            nombre: recibo.nombre,
+            nombre: nombre || '',
             direccion: recibo.direccion,
             zona: recibo.zona,
             importe: recibo.importe || 0
-          }))} />
+          })})} />
         </div>
       )}
 
@@ -712,6 +878,164 @@ export default function Recibos() {
               </Button>
             </div>
           </form>
+        </div>
+      </Modal>
+
+      {/* Modal para agregar pago */}
+      <Modal isOpen={modalAgregarPago.isOpen} onClose={modalAgregarPago.closeModal}>
+        <div className="p-6 sm:p-8 max-w-md mx-auto">
+          <h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+            Agregar Pago a Recibo #{reciboSeleccionado?.id}
+          </h3>
+          
+          {reciboSeleccionado && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg dark:bg-gray-800">
+              <div className="text-sm">
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {socios.find(s => s.id === reciboSeleccionado?.socio_id)?.nombre}
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Importe: {reciboSeleccionado?.importe} €
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Pagado: {getTotalPagado(reciboSeleccionado?.id)} €
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Pendiente: {(reciboSeleccionado?.importe - Number(getTotalPagado(reciboSeleccionado?.id)))} €
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <form onSubmit={(e) => { e.preventDefault(); agregarPago(); }} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Cantidad (€) *
+              </label>
+              <InputField
+                type="number"
+                placeholder="0.00"
+                value={nuevoPago.cantidad}
+                onChange={(e) => setNuevoPago({
+                  ...nuevoPago, 
+                  cantidad: parseFloat(e.target.value) || 0
+                })}
+                step={0.01}
+                min="0"
+                required={true}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Fecha de Pago *
+              </label>
+              <InputField
+                type="date"
+                value={nuevoPago.fecha_pago}
+                onChange={(e) => setNuevoPago({
+                  ...nuevoPago, 
+                  fecha_pago: e.target.value
+                })}
+                required={true}
+              />
+            </div>
+            
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" className="flex-1">
+                Agregar Pago
+              </Button>
+              <Button type="button" variant="outline" onClick={modalAgregarPago.closeModal}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Modal para ver pagos */}
+      <Modal isOpen={modalVerPagos.isOpen} onClose={modalVerPagos.closeModal}>
+        <div className="p-6 sm:p-8 max-w-2xl mx-auto">
+          <h3 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+            Pagos del Recibo #{reciboSeleccionado?.id}
+          </h3>
+          
+          {reciboSeleccionado && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">Socio:</span>
+                  <div className="text-gray-600 dark:text-gray-300">
+                    {socios.find(s => s.id === reciboSeleccionado?.socio_id)?.nombre}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">Concepto:</span>
+                  <div className="text-gray-600 dark:text-gray-300">
+                    {reciboSeleccionado?.concepto}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">Importe Total:</span>
+                  <div className="text-gray-600 dark:text-gray-300">
+                    {reciboSeleccionado?.importe} €
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">Total Pagado:</span>
+                  <div className="text-gray-600 dark:text-gray-300">
+                    {getTotalPagado(reciboSeleccionado?.id)} €
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {pagosRecibo.length > 0 ? (
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white">
+                Historial de Pagos ({pagosRecibo.length})
+              </h4>
+              <div className="space-y-2">
+                {pagosRecibo.map((pago) => (
+                  <div key={pago.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {pago.cantidad} €
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {new Date(pago.fecha_pago).toLocaleDateString('es-ES')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => eliminarPago(pago.id)}
+                      className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-gray-500 dark:text-gray-400">
+                No hay pagos registrados para este recibo
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-3 pt-6">
+            <Button onClick={modalVerPagos.closeModal} className="flex-1">
+              Cerrar
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
