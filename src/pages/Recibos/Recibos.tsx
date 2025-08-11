@@ -441,7 +441,12 @@ export default function Recibos() {
           </Button>
           {recibos.length > 0 && (
             <Button 
-              onClick={() => setMostrandoRecibos(!mostrandoRecibos)}
+              onClick={() => {
+                setMostrandoRecibos(!mostrandoRecibos)
+                !mostrandoRecibos && setTimeout(() => {
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 20);
+              }}
               variant="outline"
             >
               {mostrandoRecibos ? 'Ocultar Recibos' : `Ver Recibos (${recibos.length})`}
