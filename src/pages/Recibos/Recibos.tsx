@@ -373,6 +373,23 @@ export default function Recibos() {
     return totalPagado >= recibo.importe;
   };
 
+  // Calcular totales generales
+  const getTotalesGenerales = () => {
+    const totalImportes = recibosFiltrados.reduce((total, recibo) => total + Number(recibo.importe), 0);
+    const totalPagado = recibosFiltrados.reduce((total, recibo) => total + getTotalPagado(recibo.id), 0);
+    const totalPendiente = totalImportes - totalPagado;
+    const porcentajePagado = totalImportes > 0 ? (totalPagado / totalImportes) * 100 : 0;
+    
+    return {
+      totalImportes,
+      totalPagado,
+      totalPendiente,
+      porcentajePagado,
+      cantidadRecibos: recibosFiltrados.length,
+      recibosPagados: recibosFiltrados.filter(r => isReciboPagado(r)).length
+    };
+  };
+
   // Mostrar loading
   if (loading) {
     return (
@@ -500,6 +517,129 @@ export default function Recibos() {
           </Button>
         </div>
       )}
+
+      {/* Panel de Resumen */}
+      {recibosFiltrados.length > 0 && (() => {
+        const totales = getTotalesGenerales();
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total de Recibos */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total Recibos
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {totales.cantidadRecibos}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {totales.recibosPagados} pagados
+                  </p>
+                </div>
+                <div className="rounded-full bg-blue-50 p-3 dark:bg-blue-900/30">
+                  <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Importes */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total a Cobrar
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {totales.totalImportes.toFixed(2)} €
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Importe total
+                  </p>
+                </div>
+                <div className="rounded-full bg-orange-50 p-3 dark:bg-orange-900/30">
+                  <svg className="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Pagado */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total Cobrado
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {totales.totalPagado.toFixed(2)} €
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {totales.porcentajePagado.toFixed(1)}% del total
+                  </p>
+                </div>
+                <div className="rounded-full bg-green-50 p-3 dark:bg-green-900/30">
+                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Pendiente */}
+            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Pendiente
+                  </p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {totales.totalPendiente.toFixed(2)} €
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Por cobrar
+                  </p>
+                </div>
+                <div className="rounded-full bg-red-50 p-3 dark:bg-red-900/30">
+                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Barra de Progreso Visual */}
+      {recibosFiltrados.length > 0 && (() => {
+        const totales = getTotalesGenerales();
+        return (
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Progreso de Cobros
+              </h4>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                {totales.porcentajePagado.toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
+              <div 
+                className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300 ease-in-out"
+                style={{ width: `${Math.min(totales.porcentajePagado, 100)}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>0 €</span>
+              <span>{totales.totalImportes.toFixed(2)} €</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tabla de Recibos Generados */}
       {recibos.length > 0 && (
