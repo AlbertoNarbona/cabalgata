@@ -486,15 +486,7 @@ export default function Recibos() {
             placeholder="Todos los estados"
           />
         </div>
-        <div className="flex items-end">
-          <Button 
-            onClick={limpiarRecibos}
-            variant="outline"
-            className="w-full"
-          >
-            Limpiar Recibos
-          </Button>
-        </div>
+        
       </div>
       
       {/* Filtros rápidos y botones de acción */}
@@ -535,6 +527,16 @@ export default function Recibos() {
           >
             Agregar todos los recibos
           </Button>
+
+          <div className="flex items-end">
+          <Button 
+            onClick={limpiarRecibos}
+            variant="outline"
+            className="w-full"
+          >
+            Limpiar Recibos
+          </Button>
+        </div>
         </div>
       </div>
 
@@ -611,7 +613,7 @@ export default function Recibos() {
                     Total a Cobrar
                   </p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {totales.totalImportes.toFixed(2)} €
+                    {totales.totalImportes.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Importe total
@@ -633,7 +635,7 @@ export default function Recibos() {
                     Total Cobrado
                   </p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {totales.totalPagado.toFixed(2)} €
+                    {totales.totalPagado.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {totales.porcentajePagado.toFixed(1)}% del total
@@ -655,7 +657,7 @@ export default function Recibos() {
                     Pendiente
                   </p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {totales.totalPendiente.toFixed(2)} €
+                    {totales.totalPendiente.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     Por cobrar
@@ -707,7 +709,7 @@ export default function Recibos() {
               Recibos Generados ({recibos.length})
             </h4>
             
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto h-[50vh]">
               <Table className="w-full">
                 <TableHeader>
                   <TableRow className="border-b border-gray-50 dark:border-gray-800">
@@ -787,7 +789,7 @@ export default function Recibos() {
               {busqueda || zonaFiltro ? ` - Filtrados` : ''}
             </h4>
             
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto h-[60vh]">
               <Table className="w-full">
                 <TableHeader>
                   <TableRow className="border-b border-gray-50 dark:border-gray-800">
