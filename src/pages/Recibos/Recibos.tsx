@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { RecibosCabalgatas } from '../../utils/recibosCabalgatas.tsx';
 import { sociosService, Socio } from '../../services/sociosService';
 import { recibosService, Recibo as ReciboDB } from '../../services/recibosService';
@@ -31,6 +31,7 @@ export default function Recibos() {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [zonaFiltro, setZonaFiltro] = useState('');
+  const [estadoPagoFiltro, setEstadoPagoFiltro] = useState(''); // '', 'pagado', 'pendiente'
   const [mostrandoRecibos, setMostrandoRecibos] = useState(false);
   
   // Modal para agregar recibos
@@ -78,6 +79,19 @@ export default function Recibos() {
   });
   const [pagosRecibo, setPagosRecibo] = useState<Pago[]>([]);
 
+  // Función para calcular total pagado de un recibo
+  const getTotalPagado = useCallback((reciboId: number): number => {
+    return pagos
+      .filter(pago => pago.recibo_id === reciboId)
+      .reduce((total, pago) => total + Number(pago.cantidad), 0);
+  }, [pagos]);
+
+  // Función para verificar si un recibo está pagado
+  const isReciboPagado = useCallback((recibo: ReciboDB): boolean => {
+    const totalPagado = getTotalPagado(recibo.id);
+    return totalPagado >= recibo.importe;
+  }, [getTotalPagado]);
+
   // Cargar socios y recibos al montar el componente
   useEffect(() => {
     const cargarDatos = async () => {
@@ -104,7 +118,7 @@ export default function Recibos() {
     cargarDatos();
   }, []);
 
-  // Filtrar recibos por búsqueda y zona
+  // Filtrar recibos por búsqueda, zona y estado de pago
   useEffect(() => {
     let filtrados = recibosDB;
 
@@ -126,8 +140,15 @@ export default function Recibos() {
       });
     }
 
+    if (estadoPagoFiltro) {
+      filtrados = filtrados.filter(recibo => {
+        const estaPagado = isReciboPagado(recibo);
+        return estadoPagoFiltro === 'pagado' ? estaPagado : !estaPagado;
+      });
+    }
+
     setRecibosFiltrados(filtrados);
-  }, [recibosDB, socios, busqueda, zonaFiltro]);
+  }, [recibosDB, socios, busqueda, zonaFiltro, estadoPagoFiltro, pagos, isReciboPagado]);
 
   // Obtener zonas únicas para el filtro
   const zonas = [...new Set(socios.map(socio => socio.zona).filter(zona => zona))];
@@ -360,18 +381,7 @@ export default function Recibos() {
     }
   };
 
-  // Función para calcular total pagado de un recibo
-  const getTotalPagado = (reciboId: number): number => {
-    return pagos
-      .filter(pago => pago.recibo_id === reciboId)
-      .reduce((total, pago) => total + Number(pago.cantidad), 0);
-  };
 
-  // Función para verificar si un recibo está pagado
-  const isReciboPagado = (recibo: ReciboDB): boolean => {
-    const totalPagado = getTotalPagado(recibo.id);
-    return totalPagado >= recibo.importe;
-  };
 
   // Calcular totales generales
   const getTotalesGenerales = () => {
@@ -425,10 +435,7 @@ export default function Recibos() {
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-          Generación de Recibos
-        </h3>
-        <div className="flex gap-2">
+        
           <Button onClick={modalAgregarRecibo.openModal}>
             Agregar Recibo Manual
           </Button>
@@ -440,11 +447,10 @@ export default function Recibos() {
               {mostrandoRecibos ? 'Ocultar Recibos' : `Ver Recibos (${recibos.length})`}
             </Button>
           )}
-        </div>
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Buscar recibos
@@ -466,6 +472,20 @@ export default function Recibos() {
             placeholder="Todas las zonas"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Estado de pago
+          </label>
+          <Select
+            defaultValue={estadoPagoFiltro}
+            onChange={(value) => typeof value === 'string' ? setEstadoPagoFiltro(value) : setEstadoPagoFiltro('')}
+            options={[
+              { value: 'pagado', label: 'Pagados' },
+              { value: 'pendiente', label: 'Pendientes' }
+            ]}
+            placeholder="Todos los estados"
+          />
+        </div>
         <div className="flex items-end">
           <Button 
             onClick={limpiarRecibos}
@@ -475,11 +495,43 @@ export default function Recibos() {
             Limpiar Recibos
           </Button>
         </div>
-        <div className="flex items-end">
+      </div>
+      
+      {/* Filtros rápidos y botones de acción */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        {/* Filtros rápidos */}
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={() => setEstadoPagoFiltro('')}
+            variant={estadoPagoFiltro === '' ? "primary" : "outline"}
+            size="sm"
+          >
+            Todos ({recibosDB.length})
+          </Button>
+          <Button
+            onClick={() => setEstadoPagoFiltro('pendiente')}
+            variant={estadoPagoFiltro === 'pendiente' ? "primary" : "outline"}
+            size="sm"
+            className={estadoPagoFiltro === 'pendiente' ? 'bg-yellow-600 hover:bg-yellow-700' : 'text-yellow-600 border-yellow-600 hover:bg-yellow-50'}
+          >
+            Pendientes ({recibosDB.filter(r => !isReciboPagado(r)).length})
+          </Button>
+          <Button
+            onClick={() => setEstadoPagoFiltro('pagado')}
+            variant={estadoPagoFiltro === 'pagado' ? "primary" : "outline"}
+            size="sm"
+            className={estadoPagoFiltro === 'pagado' ? 'bg-green-600 hover:bg-green-700' : 'text-green-600 border-green-600 hover:bg-green-50'}
+          >
+            Pagados ({recibosDB.filter(r => isReciboPagado(r)).length})
+          </Button>
+        </div>
+        
+        {/* Botones de acción */}
+        <div className="flex gap-2">
           <Button 
             onClick={agregarTodosLosRecibos}
             variant="outline"
-            className="w-full"
+            size="sm"
           >
             Agregar todos los recibos
           </Button>
@@ -487,7 +539,7 @@ export default function Recibos() {
       </div>
 
       {/* Indicador de filtros activos */}
-      {(busqueda || zonaFiltro) && (
+      {(busqueda || zonaFiltro || estadoPagoFiltro) && (
         <div className="flex items-center justify-between rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
@@ -503,6 +555,11 @@ export default function Recibos() {
                 Zona: {zonaFiltro}
               </span>
             )}
+            {estadoPagoFiltro && (
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                Estado: {estadoPagoFiltro === 'pagado' ? 'Pagados' : 'Pendientes'}
+              </span>
+            )}
           </div>
           <Button
             variant="outline"
@@ -510,6 +567,7 @@ export default function Recibos() {
             onClick={() => {
               setBusqueda('');
               setZonaFiltro('');
+              setEstadoPagoFiltro('');
             }}
             className="text-xs"
           >
@@ -1058,10 +1116,10 @@ export default function Recibos() {
                 value={nuevoPago.cantidad}
                 onChange={(e) => setNuevoPago({
                   ...nuevoPago, 
-                  cantidad: parseFloat(e.target.value) || 0
+                  cantidad: parseFloat(e.target.value)
                 })}
                 step={0.01}
-                min="0"
+                max={reciboSeleccionado ? (Number(reciboSeleccionado.importe) - getTotalPagado(reciboSeleccionado.id)).toString() : undefined}
                 required={true}
               />
             </div>
