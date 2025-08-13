@@ -572,18 +572,25 @@ export default function Cortejos() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Gestión de Cortejos
-        </h3>
-        <Button
-          onClick={modalCortejo.openModal}
-          className="bg-primary text-white">
-          Nuevo Cortejo
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header mejorado */}
+        <div className="flex justify-between items-center bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+              Gestión de Cortejos
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              Organiza y gestiona los cortejos, carrozas y asignaciones
+            </p>
+          </div>
+          <Button
+            onClick={modalCortejo.openModal}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <span className="mr-2">✨</span>
+            Nuevo Cortejo
+          </Button>
+        </div>
 
       {/* Migas de pan */}
       {(cortejoSeleccionado || carrozaSeleccionada) && (

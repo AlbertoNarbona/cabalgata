@@ -439,7 +439,7 @@ export default function Recibos() {
           <Button onClick={modalAgregarRecibo.openModal}>
             Agregar Recibo Manual
           </Button>
-          {recibos.length > 0 && (
+          {recibos?.length > 0 && (
             <Button 
               onClick={() => {
                 setMostrandoRecibos(!mostrandoRecibos)
@@ -447,38 +447,45 @@ export default function Recibos() {
                   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }, 20);
               }}
-              variant="outline"
             >
-              {mostrandoRecibos ? 'Ocultar Recibos' : `Ver Recibos (${recibos.length})`}
+              {mostrandoRecibos ? 'Ocultar Recibos' : `Imprimir Recibos (${recibos.length})`}
             </Button>
           )}
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Buscar recibos
-          </label>
-          <InputField
-            placeholder="Buscar por nombre de socio, dirección o concepto..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Buscar recibos
+            </label>
+            <InputField
+              placeholder="Buscar por nombre, dirección o concepto..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Filtrar por zona
+            </label>
+            <Select
+              defaultValue={zonaFiltro}
+              onChange={(value) => typeof value === 'string' ? setZonaFiltro(value) : setZonaFiltro('')}
+              options={zonas.map(zona => ({ value: zona, label: zona }))}
+              placeholder="Todas las zonas"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Filtrar por zona
-          </label>
-          <Select
-            defaultValue={zonaFiltro}
-            onChange={(value) => typeof value === 'string' ? setZonaFiltro(value) : setZonaFiltro('')}
-            options={zonas.map(zona => ({ value: zona, label: zona }))}
-            placeholder="Todas las zonas"
-          />
-        </div>
-        
-        
       </div>
       
       {/* Filtros rápidos y botones de acción */}
@@ -496,7 +503,7 @@ export default function Recibos() {
             onClick={() => setEstadoPagoFiltro('pendiente')}
             variant={estadoPagoFiltro === 'pendiente' ? "primary" : "outline"}
             size="sm"
-            className={estadoPagoFiltro === 'pendiente' ? 'bg-yellow-600 hover:bg-yellow-700' : 'text-yellow-600 border-yellow-600 hover:bg-yellow-50'}
+            className={estadoPagoFiltro === 'pendiente' ? 'bg-red-600 hover:bg-red-700' : 'text-red-600 border-red-600 hover:bg-red-50'}
           >
             Pendientes ({recibosDB.filter(r => !isReciboPagado(r)).length})
           </Button>
@@ -511,24 +518,23 @@ export default function Recibos() {
         </div>
         
         {/* Botones de acción */}
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button 
             onClick={agregarTodosLosRecibos}
             variant="outline"
             size="sm"
+            className="px-4 py-2 text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-colors"
           >
             Agregar todos los recibos
           </Button>
-
-          <div className="flex items-end">
-          <Button 
+          {recibos?.length > 0 && <Button 
             onClick={limpiarRecibos}
             variant="outline"
-            className="w-full"
+            size="sm"
+            className="px-4 py-2 text-sm font-medium border-red-600 text-red-600 hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
           >
             Limpiar Recibos
-          </Button>
-        </div>
+          </Button>}
         </div>
       </div>
 
@@ -695,78 +701,105 @@ export default function Recibos() {
 
       {/* Tabla de Recibos Generados */}
       {recibos.length > 0 && (
-        <div className="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-xl border border-gray-100 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Recibos Generados
+              </h4>
+              <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 text-sm font-medium px-3 py-1 rounded-full">
+                {recibos.length} recibos
+              </span>
+            </div>
+          </div>
+          
           <div className="p-6">
-            <h4 className="mb-4 text-lg font-semibold text-gray-800 dark:text-white/90">
-              Recibos Generados ({recibos.length})
-            </h4>
-            
-            <div className="overflow-x-auto overflow-y-auto h-[50vh]">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow className="border-b border-gray-50 dark:border-gray-800">
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">ID</TableCell>
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre</TableCell>
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Dirección</TableCell>
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Zona</TableCell>
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe (€)</TableCell>
-                    <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recibos.map((recibo, index) => (
-                    <TableRow 
-                      key={recibo.id}
-                      className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
-                        index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/30'
-                      }`}
-                    >
-                      <TableCell className="p-2 text-sm text-gray-900 dark:text-white">
-                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">#{recibo.id}</span>
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <InputField
-                          value={recibo.nombre}
-                          onChange={(e) => actualizarRecibo(recibo.id, 'nombre', e.target.value)}
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <InputField
-                          value={recibo.direccion}
-                          onChange={(e) => actualizarRecibo(recibo.id, 'direccion', e.target.value)}
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <InputField
-                          value={recibo.zona}
-                          onChange={(e) => actualizarRecibo(recibo.id, 'zona', e.target.value)}
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <InputField
-                          type="number"
-                          value={recibo.importe}
-                          onChange={(e) => actualizarRecibo(recibo.id, 'importe', parseFloat(e.target.value) || 0)}
-                          className="text-sm"
-                        />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-2">
+            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">ID</TableCell>
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Nombre</TableCell>
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Dirección</TableCell>
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Zona</TableCell>
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Importe</TableCell>
+                      <TableCell isHeader className="p-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Acciones</TableCell>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recibos.map((recibo, index) => (
+                      <TableRow 
+                        key={recibo.id}
+                        className={`group transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-gray-100 dark:border-gray-800 ${
+                          index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/30'
+                        }`}
+                      >
+                        <TableCell className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                              <span className="text-xs font-mono font-medium text-blue-600 dark:text-blue-400">
+                                {recibo.id}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-3">
+                          <InputField
+                            value={recibo.nombre}
+                            onChange={(e) => actualizarRecibo(recibo.id, 'nombre', e.target.value)}
+                            className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors"
+                            placeholder="Nombre del socio"
+                          />
+                        </TableCell>
+                        <TableCell className="p-3">
+                          <InputField
+                            value={recibo.direccion}
+                            onChange={(e) => actualizarRecibo(recibo.id, 'direccion', e.target.value)}
+                            className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors"
+                            placeholder="Dirección"
+                          />
+                        </TableCell>
+                        <TableCell className="p-3">
+                          <InputField
+                            value={recibo.zona}
+                            onChange={(e) => actualizarRecibo(recibo.id, 'zona', e.target.value)}
+                            className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors"
+                            placeholder="Zona"
+                          />
+                        </TableCell>
+                        <TableCell className="p-3">
+                          <div className="relative">
+                            <InputField
+                              type="number"
+                              value={recibo.importe || ''}
+                              onChange={(e) => actualizarRecibo(recibo.id, 'importe', parseFloat(e.target.value) || 0)}
+                              className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors pr-8"
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-3">
                           <button
                             onClick={() => eliminarRecibo(recibo.id)}
-                            className="inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                            className="inline-flex items-center gap-1 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-2 text-xs font-medium text-red-700 dark:text-red-400 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                           >
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                             Eliminar
                           </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         </div>
