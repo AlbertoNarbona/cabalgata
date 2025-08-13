@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Button from '../../components/ui/button/Button';
 import InputField from '../../components/form/input/InputField';
 import { Modal } from '../../components/ui/modal';
@@ -199,7 +199,7 @@ export default function Cortejos() {
     }
   };
 
-  const cargarTodasLasAsignaciones = async () => {
+  const cargarTodasLasAsignaciones = useCallback(async () => {
     if (!cortejoSeleccionado || carrozas.length === 0) return;
 
     try {
@@ -214,7 +214,7 @@ export default function Cortejos() {
       setError('Error al cargar todas las asignaciones');
       console.error('Error cargando todas las asignaciones:', err);
     }
-  };
+  }, [cortejoSeleccionado, carrozas]);
 
   useEffect(() => {
     cargarDatos();
@@ -243,7 +243,7 @@ export default function Cortejos() {
     if (cortejoSeleccionado && carrozas.length > 0 && !carrozaSeleccionada) {
       cargarTodasLasAsignaciones();
     }
-  }, [cortejoSeleccionado, carrozas, carrozaSeleccionada]);
+  }, [cortejoSeleccionado, carrozas, carrozaSeleccionada, cargarTodasLasAsignaciones]);
 
   // Limpiar sitio seleccionado cuando cambie el tipo de usuario
   useEffect(() => {
@@ -562,267 +562,320 @@ export default function Cortejos() {
     return stats.beduinos.ocupados >= stats.beduinos.maximo;
   };
 
-  // Mostrar loading
+  // Mostrar loading mejorado
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Cargando cortejos...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 flex items-center justify-center p-6">
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20 dark:border-gray-700/50 text-center">
+          <div className="animate-spin text-6xl mb-4">🎭</div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+            Cargando Cortejos
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300">
+            Preparando la gestión de cortejos...
+          </p>
+          <div className="flex justify-center mt-4">
+            <div className="animate-pulse flex space-x-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header mejorado */}
         <div className="flex justify-between items-center bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              Gestión de Cortejos
+            <h1 className="text-3xl font-bold text-blue-600">
+          Gestión de Cortejos
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-1">
               Organiza y gestiona los cortejos, carrozas y asignaciones
             </p>
           </div>
-          <Button
-            onClick={modalCortejo.openModal}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+        {!cortejoSeleccionado && <Button
+          onClick={modalCortejo.openModal}
+            >
             <span className="mr-2">✨</span>
-            Nuevo Cortejo
-          </Button>
-        </div>
+          Nuevo Cortejo
+        </Button>}
+      </div>
 
-      {/* Migas de pan */}
+        {/* Breadcrumbs mejorados */}
       {(cortejoSeleccionado || carrozaSeleccionada) && (
-        <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-xl p-4 shadow-lg border border-white/20 dark:border-gray-700/50">
+            <nav className="flex items-center space-x-3 text-sm">
           <button
             onClick={() => {
               setCortejoSeleccionado(null);
               setCarrozaSeleccionada(null);
             }}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                className="flex items-center px-3 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 font-medium transition-all duration-200 hover:scale-105">
+                <span className="mr-2">🏠</span>
             Cortejos
           </button>
           {cortejoSeleccionado && (
             <>
-              <span>/</span>
+                  <span className="text-gray-400">→</span>
               <button
-                onClick={() => {
-                  setCarrozaSeleccionada(null);
-                }}
-                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    onClick={() => setCarrozaSeleccionada(null)}
+                    className="flex items-center px-3 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/50 dark:hover:bg-purple-800/50 text-purple-700 dark:text-purple-300 font-medium transition-all duration-200 hover:scale-105">
+                    <span className="mr-2">👑</span>
                 {cortejoSeleccionado.nombre}
               </button>
             </>
           )}
-          {carrozaSeleccionada && cortejoSeleccionado && (
+              {carrozaSeleccionada && (
             <>
-              <span>/</span>
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
+                  <span className="text-gray-400">→</span>
+                  <div className="flex items-center px-3 py-2 rounded-lg bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/50 dark:to-red-900/50 text-orange-700 dark:text-orange-300 font-medium">
+                    <span className="mr-2">🚗</span>
                 {carrozaSeleccionada.nombre}
-              </span>
+                  </div>
             </>
           )}
+            </nav>
         </div>
       )}
 
       {/* Contenido principal */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Panel de cortejos - Solo mostrar si no hay cortejo seleccionado */}
+        <div className="space-y-8">
+          {/* Panel de cortejos mejorado */}
         {!cortejoSeleccionado && (
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-blue-200 border border-blue-300 rounded-xl mr-4">
+                  <span className="text-2xl">👑</span>
+                </div>
           <div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-              <h4 className="mb-4 text-md font-semibold text-gray-800 dark:text-white/90">
-                Cortejos
-              </h4>
-              <div className="space-y-2">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                    Selecciona un Cortejo
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                    Elige el cortejo que deseas gestionar
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {cortejos && cortejos.length > 0 ? cortejos.map((cortejo: Cortejo) => (
                   <div
                     key={cortejo.id}
-                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                      cortejoSeleccionado?.id === cortejo.id
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400 shadow-lg transform scale-105'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md'
-                    }`}
+                    className="group relative bg-white dark:bg-gray-800 rounded-xl p-5 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-105 border border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:hover:border-blue-600"
                     onClick={() => {
                       setCortejoSeleccionado(cortejo);
                       setCarrozaSeleccionada(null);
                     }}>
-                    <div className="flex-1">
-                      <div className="font-semibold text-lg mb-1">
-                        {cortejo.nombre}
-                      </div>
-                      <div
-                        className={`text-sm ${
-                          cortejoSeleccionado?.id === cortejo.id
-                            ? 'text-blue-100'
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                        <div className="flex justify-between items-center w-full">
-                          <span>Año {cortejo.ano}</span>
-
-                          <span></span>
+                    
+                    <div className="absolute inset-0 bg-blue-50 dark:bg-blue-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-end mb-3">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               confirmarEliminacion('cortejo', cortejo);
                             }}
-                            className={`p-2 rounded-lg transition-colors ${
-                              cortejoSeleccionado?.id === cortejo.id
-                                ? 'text-white hover:bg-blue-400'
-                                : 'hover:bg-red-50 dark:hover:bg-red-900/20'
-                            }`}>
-                            <img
-                              src="/images/icons/trash.svg"
-                              alt="Eliminar"
-                              className="w-4.5 h-4.5 brightness-0 saturate-100"
-                              style={{
-                                filter:
-                                  'invert(23%) sepia(86%) saturate(6476%) hue-rotate(352deg) brightness(96%) contrast(101%)',
-                              }}
-                            />
+                          className="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-200">
+                          <span className="text-red-500">🗑️</span>
                           </button>
+                      </div>
+                      
+                      <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-2 line-clamp-2">
+                        {cortejo.nombre}
+                      </h3>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+                          📅 {cortejo.ano}
+                        </span>
+                        <div className="flex items-center text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform duration-200">
+                          <span className="text-sm font-medium mr-1">Ver</span>
+                          <span>→</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  <div className="col-span-full text-center py-12">
+                    <div className="text-6xl mb-4">🎭</div>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                     No hay cortejos disponibles
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Crea tu primer cortejo para comenzar
+                    </p>
                   </div>
                 )}
-              </div>
             </div>
           </div>
         )}
 
-        {/* Panel de carrozas - Solo mostrar si hay cortejo seleccionado pero no carroza */}
+          {/* Panel de carrozas mejorado */}
         {cortejoSeleccionado && !carrozaSeleccionada && (
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                    <div className="p-3 bg-purple-300 rounded-xl mr-4">
+                      <span className="text-2xl">🚗</span>
+                    </div>
           <div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-md font-semibold text-gray-800 dark:text-white/90">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                   Carrozas de {cortejoSeleccionado.nombre}
-                </h4>
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">
+                      Gestiona las carrozas y sus capacidades
+                    </p>
+                  </div>
+                </div>
                 <Button
                   onClick={modalCarroza.openModal}
-                  className="bg-primary text-white"
-                  size="sm">
-                  +
+                  type='button'
+                  className="bg-purple-500 hover:bg-purple-700 text-purple-800 hover:text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Nueva Carroza
                 </Button>
               </div>
-              <div className="space-y-2">
-                {carrozas && carrozas.length > 0 ? carrozas.map((carroza: Carroza) => (
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {carrozas && carrozas.length > 0 ? carrozas.map((carroza: Carroza) => {
+                  const stats = estadisticasPorCarroza[carroza.id];
+                  const carrozaProgress = stats ? (stats.carroza.ocupados / stats.carroza.maximo) * 100 : 0;
+                  const beduinosProgress = stats ? (stats.beduinos.ocupados / stats.beduinos.maximo) * 100 : 0;
+                  const isComplete = carrozaCompleta(carroza);
+                  
+                  return (
                     <div
                       key={carroza.id}
-                      className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                        carrozaSeleccionada?.id === carroza.id
-                          ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-400 shadow-lg transform scale-105'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-md'
-                      }`}
+                      className="group relative bg-white dark:bg-gray-800 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-105 border border-purple-100 dark:border-purple-800/50 hover:border-purple-300 dark:hover:border-purple-600"
                       onClick={() => {
                         setAsignaciones([]);
                         setCarrozaSeleccionada(carroza);
                       }}>
-                      <div className="flex-1">
-                        <div className="font-semibold text-lg mb-1">
-                          {carroza.nombre}
+                      
+                      {isComplete && (
+                        <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-2 z-20">
+                          <span className="text-sm">✅</span>
                         </div>
-                        <div
-                          className={`text-sm mb-2 ${
-                            carrozaSeleccionada?.id === carroza.id
-                              ? 'text-purple-100'
-                              : 'text-gray-500 dark:text-gray-400'
-                          }`}></div>
-
-                        <div className="flex justify-between items-center gap-2">
-                          {(() => {
-                            const stats = estadisticasPorCarroza[carroza.id];
-                            if (!stats) return null;
-                            return (
-                              <div
-                                className={`text-xs space-y-1 ${
-                                  carrozaSeleccionada?.id === carroza.id
-                                    ? 'text-purple-100'
-                                    : ''
-                                }`}>
-                                <div className="flex items-center justify-between">
-                                  <span>Carroza:</span>
-                                  <span
-                                    className={`font-medium ${
-                                      stats.carroza.ocupados >=
-                                      stats.carroza.maximo
-                                        ? 'text-red-300'
-                                        : 'text-green-300'
-                                    }`}>
-                                    {stats.carroza.ocupados}/
-                                    {stats.carroza.maximo}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span>Beduinos:</span>
-                                  <span
-                                    className={`font-medium ${
-                                      stats.beduinos.ocupados >=
-                                      stats.beduinos.maximo
-                                        ? 'text-red-300'
-                                        : 'text-green-300'
-                                    }`}>
-                                    {stats.beduinos.ocupados}/
-                                    {stats.beduinos.maximo}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })()}
+                      )}
+                      
+                      <div className="absolute inset-0 bg-purple-50 dark:bg-purple-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-end mb-4">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               confirmarEliminacion('carroza', carroza);
                             }}
-                            className={`p-2 rounded-lg transition-colors ${
-                              carrozaSeleccionada?.id === carroza.id
-                                ? 'text-white hover:bg-purple-400'
-                                : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-                            }`}>
-                            <img
-                              src="/images/icons/trash.svg"
-                              alt="Eliminar"
-                              className="w-4.5 h-4.5 min-w-4.5 min-h-4.5 brightness-0 saturate-100"
-                              style={{
-                                filter:
-                                  'invert(23%) sepia(86%) saturate(6476%) hue-rotate(352deg) brightness(96%) contrast(101%)',
-                              }}
-                            />
+                            className="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-200">
+                            <span className="text-red-500">🗑️</span>
                           </button>
+                        </div>
+                        
+                        <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-4 line-clamp-1">
+                          {carroza.nombre}
+                        </h3>
+                        
+                        {/* Indicadores de progreso */}
+                        <div className="space-y-3 mb-4">
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600 dark:text-gray-300">🚗 Carroza</span>
+                              <span className="font-medium text-gray-800 dark:text-white">
+                                {stats?.carroza.ocupados || 0}/{stats?.carroza.maximo || 0}
+                              </span>
+                        </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  carrozaProgress >= 100 ? 'bg-red-500' : carrozaProgress >= 75 ? 'bg-yellow-500' : 'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(carrozaProgress, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600 dark:text-gray-300">🐪 Beduinos</span>
+                              <span className="font-medium text-gray-800 dark:text-white">
+                                {stats?.beduinos.ocupados || 0}/{stats?.beduinos.maximo || 0}
+                                  </span>
+                                </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  beduinosProgress >= 100 ? 'bg-red-500' : beduinosProgress >= 75 ? 'bg-yellow-500' : 'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(beduinosProgress, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                                <div className="flex items-center justify-between">
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            isComplete 
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                              : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                          }`}>
+                            {isComplete ? '✅ Completa' : '⏳ Disponible'}
+                                </div>
+                          <div className="flex items-center text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform duration-200">
+                            <span className="text-sm font-medium mr-1">Gestionar</span>
+                            <span>→</span>
+                              </div>
                         </div>
                       </div>
                     </div>
-                  )) : (
-                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  );
+                }) : (
+                  <div className="col-span-full text-center py-12">
+                    <div className="text-6xl mb-4">🚗</div>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                       No hay carrozas disponibles
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Crea la primera carroza para este cortejo
+                    </p>
                     </div>
                   )}
-              </div>
             </div>
           </div>
         )}
 
-        {/* Panel de asignaciones - Solo mostrar si hay carroza seleccionada */}
+          {/* Panel de asignaciones mejorado */}
         {carrozaSeleccionada && (
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="p-3 bg-orange-200 border border-orange-300 rounded-xl mr-4">
+                    <span className="text-2xl">👥</span>
+                  </div>
           <div>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-md font-semibold text-gray-800 dark:text-white/90">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                   Asignaciones de {carrozaSeleccionada.nombre}
-                </h4>
-                {carrozaSeleccionada &&
-                  !carrozaCompleta(carrozaSeleccionada) && (
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm">
+                      Gestiona los participantes de la carroza
+                    </p>
+                  </div>
+                </div>
+                {!carrozaCompleta(carrozaSeleccionada) && (
                     <Button
                       onClick={modalAsignacion.openModal}
-                      className="bg-primary text-white"
-                      size="sm">
-                      +
+                      className="bg-orange-500 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                    <span className="mr-2">👤</span>
+                    Asignar Persona
                     </Button>
                   )}
               </div>
@@ -875,43 +928,41 @@ export default function Cortejos() {
                                 return (
                                   <div
                                     key={asignacion.id}
-                                    className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 dark:border-blue-700">
-                                    <div className="flex flex-col">
-                                      <div className="font-medium text-gray-800 dark:text-white text-sm truncate">
-                                        #{socio?.id} - {infoPersona.nombre}
+                                  className="group relative bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                  
+                                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-cyan-400/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                  
+                                  <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                                          <span className="text-sm">🚗</span>
                                       </div>
-                                      <div className="flex justify-between items-start text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                        Sitio{' '}
-                                        {obtenerSitioLimpio(asignacion.sitio)} {infoPersona.relacion != 'Socio' && `(${infoPersona.relacion})`}
                                         <div>
-
+                                          <div className="font-semibold text-gray-800 dark:text-white text-sm">
+                                            #{socio?.id} - {infoPersona.nombre}
+                                          </div>
+                                          <div className="text-xs text-blue-600 dark:text-blue-400">
+                                            Sitio {obtenerSitioLimpio(asignacion.sitio)}
+                                            {infoPersona.relacion !== 'Socio' && (
+                                              <span className="ml-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded-full text-xs">
+                                                {infoPersona.relacion}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                         <button
-                                          onClick={() =>
-                                            confirmarEliminacion(
-                                              'asignacion',
-                                              asignacion
-                                            )
-                                          }
-                                          className="p-1 text-blue-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0">
-                                          <img src="/images/icons/printer.svg" alt="Imprimir" className="w-4.5 h-4.5" />
+                                          onClick={() => console.log('Imprimir', asignacion)}
+                                          className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm">🖨️</span>
                                         </button>
                                         <button
-                                          onClick={() =>
-                                            confirmarEliminacion(
-                                              'asignacion',
-                                              asignacion
-                                            )
-                                          }
-                                          className="p-1 text-blue-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0">
-                                          <img
-                                            src="/images/icons/trash.svg"
-                                            alt="Eliminar"
-                                            className="w-4.5 h-4.5 brightness-0 saturate-100"
-                                            style={{
-                                              filter:
-                                                'invert(23%) sepia(86%) saturate(6476%) hue-rotate(352deg) brightness(96%) contrast(101%)',
-                                            }}
-                                          />
+                                          onClick={() => confirmarEliminacion('asignacion', asignacion)}
+                                          className="p-1.5 text-blue-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm">🗑️</span>
                                         </button>
                                         </div>
                                       </div>
@@ -948,45 +999,41 @@ export default function Cortejos() {
                                 return (
                                   <div
                                     key={asignacion.id}
-                                    className="p-3 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 dark:border-purple-700">
-                                    <div className="flex flex-col">
-                                      <div className="font-medium text-gray-800 dark:text-white text-sm truncate w-full">
-                                        #{socio?.id} - {infoPersona.nombre} 
-                                      </div>
-
-                                      <div className="flex justify-between items-start text-xs text-purple-600 dark:text-purple-400 mt-1">
-                                        Sitio{' '}
-                                        {obtenerSitioLimpio(asignacion.sitio)} {infoPersona.relacion != 'Socio' && `(${infoPersona.relacion})`}
-                                        
+                                  className="group relative bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                  
+                                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-pink-400/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                  
+                                  <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div className="flex items-center space-x-2">
+                                        <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                                          <span className="text-sm">🐪</span>
+                                        </div>
                                         <div>
+                                          <div className="font-semibold text-gray-800 dark:text-white text-sm">
+                                            #{socio?.id} - {infoPersona.nombre}
+                                          </div>
+                                          <div className="text-xs text-purple-600 dark:text-purple-400">
+                                            Sitio {obtenerSitioLimpio(asignacion.sitio)}
+                                            {infoPersona.relacion !== 'Socio' && (
+                                              <span className="ml-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/50 rounded-full text-xs">
+                                                {infoPersona.relacion}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                         <button
-                                          onClick={() =>
-                                            confirmarEliminacion(
-                                              'asignacion',
-                                              asignacion
-                                            )
-                                          }
-                                          className="p-1 text-blue-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0">
-                                          <img src="/images/icons/printer.svg" alt="Imprimir" className="w-4.5 h-4.5" />
+                                          onClick={() => console.log('Imprimir', asignacion)}
+                                          className="p-1.5 text-purple-400 hover:text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm">🖨️</span>
                                         </button>
-
                                         <button
-                                          onClick={() =>
-                                            confirmarEliminacion(
-                                              'asignacion',
-                                              asignacion
-                                            )
-                                          }
-                                          className="p-1 text-purple-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex-shrink-0">
-                                          <img
-                                            src="/images/icons/trash.svg"
-                                            alt="Eliminar"
-                                            className="w-4.5 h-4.5 brightness-0 saturate-100"
-                                            style={{
-                                              filter:
-                                                'invert(23%) sepia(86%) saturate(6476%) hue-rotate(352deg) brightness(96%) contrast(101%)',
-                                            }}
-                                          />
+                                          onClick={() => confirmarEliminacion('asignacion', asignacion)}
+                                          className="p-1.5 text-purple-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm">🗑️</span>
                                         </button>
                                         </div>
                                       </div>
@@ -1000,24 +1047,37 @@ export default function Cortejos() {
                       </div>
                     );
                   })()}
-                  {asignaciones.length === 0 &&
-                    !carrozaCompleta(carrozaSeleccionada) && (
-                      <div className="p-4 text-center">
-                        <div className="w-8 h-8 mx-auto mb-2 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                          <span className="text-gray-400">👥</span>
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {asignaciones.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">👥</div>
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                           Sin asignaciones
-                        </div>
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Esta carroza aún no tiene personas asignadas
+                      </p>
+                      {!carrozaCompleta(carrozaSeleccionada) && (
+                        <Button
+                          onClick={modalAsignacion.openModal}
+                          className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
+                          <span className="mr-2">👤</span>
+                          Asignar Primera Persona
+                        </Button>
+                      )}
                       </div>
                     )}
                 </div>
               ) : (
-                <div className="text-gray-500 text-center py-4">
-                  Selecciona una carroza para ver sus asignaciones
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🚗</div>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+                    Selecciona una carroza
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Elige una carroza para ver y gestionar sus asignaciones
+                  </p>
                 </div>
               )}
-            </div>
           </div>
         )}
       </div>
@@ -1306,17 +1366,25 @@ export default function Cortejos() {
         </div>
       </Modal>
 
-      {/* Mostrar errores */}
+        {/* Mostrar errores mejorado */}
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg">
-          {error}
+          <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-xl shadow-2xl border border-red-400 backdrop-blur-lg max-w-md">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <span className="text-xl">⚠️</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">{error}</p>
+              </div>
           <button
             onClick={() => setError(null)}
-            className="ml-2 text-white hover:text-gray-200 p-1">
-            ✕
+                className="flex-shrink-0 text-white hover:text-red-100 transition-colors p-1 rounded-lg hover:bg-red-400/20">
+                <span className="text-lg">✕</span>
           </button>
+            </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
