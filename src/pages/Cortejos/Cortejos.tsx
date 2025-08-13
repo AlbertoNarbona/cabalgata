@@ -12,6 +12,7 @@ import {
   SocioCarroza,
 } from '../../services/cortejosService';
 import { sociosService, Socio } from '../../services/sociosService';
+import { TrashBinIcon } from '../../icons';
 
 type ElementoAEliminar = {
   tipo: 'cortejo' | 'carroza' | 'asignacion';
@@ -683,7 +684,9 @@ export default function Cortejos() {
                               confirmarEliminacion('cortejo', cortejo);
                             }}
                           className="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-200">
-                          <span className="text-red-500">🗑️</span>
+                          <span className="text-red-500">
+                            <TrashBinIcon />
+                          </span>
                           </button>
                       </div>
                       
@@ -777,7 +780,7 @@ export default function Cortejos() {
                               confirmarEliminacion('carroza', carroza);
                             }}
                             className="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-200">
-                            <span className="text-red-500">🗑️</span>
+                            <span className="text-red-500"><TrashBinIcon /></span>
                           </button>
                         </div>
                         
@@ -928,7 +931,7 @@ export default function Cortejos() {
                                 return (
                                   <div
                                     key={asignacion.id}
-                                  className="group relative bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                  className="group relative dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
                                   
                                   <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-cyan-400/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                   
@@ -961,8 +964,8 @@ export default function Cortejos() {
                                         </button>
                                         <button
                                           onClick={() => confirmarEliminacion('asignacion', asignacion)}
-                                          className="p-1.5 text-blue-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                          <span className="text-sm">🗑️</span>
+                                          className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm"><TrashBinIcon /></span>
                                         </button>
                                         </div>
                                       </div>
@@ -999,7 +1002,7 @@ export default function Cortejos() {
                                 return (
                                   <div
                                     key={asignacion.id}
-                                  className="group relative bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                  className="group relative dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
                                   
                                   <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-pink-400/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                   
@@ -1032,8 +1035,8 @@ export default function Cortejos() {
                                         </button>
                                         <button
                                           onClick={() => confirmarEliminacion('asignacion', asignacion)}
-                                          className="p-1.5 text-purple-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                          <span className="text-sm">🗑️</span>
+                                          className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                          <span className="text-sm"><TrashBinIcon /></span>
                                         </button>
                                         </div>
                                       </div>
