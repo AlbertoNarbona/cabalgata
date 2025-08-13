@@ -9,6 +9,7 @@ import { sociosService, parientesService, Socio, Pariente } from "../../services
 import SearchSocios from "../../components/socios/SearchSocios";
 import SocioExpandedInfo from "../../components/socios/SocioExpandedInfo";
 import { toast } from "react-toastify";
+import { TrashBinIcon } from "../../icons";
 
 
 
@@ -265,8 +266,9 @@ export default function Socios() {
   // Mostrar loading
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Cargando socios...</div>
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-lg font-medium text-gray-700 dark:text-gray-300">Cargando socios...</div>
       </div>
     );
   }
@@ -295,12 +297,24 @@ export default function Socios() {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-          Gestión de Socios
-        </h3>
-        <Button onClick={modalSocio.openModal}>
+      {/* Encabezado mejorado */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mb-1">
+            Gestión de Socios
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {loading ? 'Cargando...' : `${socios.length} socio${socios.length !== 1 ? 's' : ''} registrado${socios.length !== 1 ? 's' : ''}`}
+            {mostrandoResultados && ` • ${sociosFiltrados.length} en resultados`}
+          </p>
+        </div>
+        <Button 
+          onClick={modalSocio.openModal}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
           Agregar Socio
         </Button>
       </div>
@@ -314,106 +328,213 @@ export default function Socios() {
 
       {/* Tabla Principal de Socios */}
       <div className="rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Indicador de resultados de búsqueda */}
           {mostrandoResultados && (
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+            <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
               <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Resultados de búsqueda: {sociosFiltrados.length} socio{sociosFiltrados.length !== 1 ? 's' : ''} encontrado{sociosFiltrados.length !== 1 ? 's' : ''}
+                  {sociosFiltrados.length} socio{sociosFiltrados.length !== 1 ? 's' : ''} encontrado{sociosFiltrados.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={limpiarBusqueda}
-                className="text-xs"
+                className="text-xs whitespace-nowrap"
               >
-                Mostrar todos
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Limpiar filtros
               </Button>
             </div>
           )}
          
+          {/* Estado vacío */}
+          {sociosAMostrar?.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                {mostrandoResultados ? 'No se encontraron socios' : 'No hay socios registrados'}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                {mostrandoResultados 
+                  ? 'Intenta ajustar los filtros de búsqueda o agregar un nuevo socio'
+                  : 'Comienza agregando tu primer socio al sistema'
+                }
+              </p>
+              {!mostrandoResultados && (
+                <Button onClick={modalSocio.openModal} className="bg-blue-600 hover:bg-blue-700">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Agregar Primer Socio
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Vista móvil - Cards */}
+          {sociosAMostrar?.length > 0 && (
+            <div className="block lg:hidden space-y-4">
+              {sociosAMostrar?.map((socio) => (
+              <div 
+                key={socio.id}
+                className="border rounded-lg p-4 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                onClick={() => toggleSocioExpandido(socio.id)}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{socio.nombre}</h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">#{socio.id}</span>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                    {obtenerParientes(socio.id).length} pariente{obtenerParientes(socio.id).length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                
+                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  {socio.direccion && <p>📍 {socio.direccion}</p>}
+                  {socio.telefono && <p>📞 {socio.telefono}</p>}
+                  {socio.email && <p>✉️ {socio.email}</p>}
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); abrirParientes(socio); }}
+                    className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400"
+                  >
+                    👥 Parientes
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); imprimirEtiqueta(socio); }}
+                    className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400"
+                  >
+                    🏷️ Etiqueta
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); confirmarEliminacionSocio(socio); }}
+                    className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400"
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
+                
+                {socioExpandido === socio.id && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <SocioExpandedInfo
+                      socio={socio}
+                      parientes={parientes}
+                      onVerParientes={abrirParientes}
+                      onImprimirEtiqueta={imprimirEtiqueta}
+                      onEliminarSocio={() => confirmarEliminacionSocio(socio)}
+                      onActualizarSocio={actualizarSocio}
+                    />
+                  </div>
+                )}
+              </div>
+              ))}
+            </div>
+          )}
           
-          <div className="overflow-x-auto">
+          {/* Vista de escritorio - Tabla */}
+          {sociosAMostrar?.length > 0 && (
+            <div className="hidden lg:block overflow-x-auto">
             <Table className="w-full">
               <TableHeader>
                 <TableRow className="border-b border-gray-50 dark:border-gray-800">
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">ID</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Dirección</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Población</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Provincia</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Teléfono</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Email</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Zona</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha Alta</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Parientes</TableCell>
-                  <TableCell isHeader className="p-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">ID</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Nombre</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Dirección</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Población</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Provincia</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Teléfono</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Email</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Zona</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Fecha Alta</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Parientes</TableCell>
+                  <TableCell isHeader className="p-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones</TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sociosAMostrar?.map((socio, index) => (
                   <React.Fragment key={socio.id}>
                     <TableRow 
-                      className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${
+                      className={`transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${
                         index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/30'
-                      } ${socioExpandido === socio.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                      } ${socioExpandido === socio.id ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-200 dark:ring-blue-800' : ''}`}
                       onClick={() => toggleSocioExpandido(socio.id)}
                     >
-                      <TableCell className="p-2 text-sm text-gray-900 dark:text-white">
-                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">#{socio.id}</span>
+                      <TableCell className="p-3 text-sm text-gray-900 dark:text-white">
+                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-500 dark:text-gray-400">#{socio.id}</span>
                       </TableCell>
-                      <TableCell className="p-2">
-                        <div className="font-medium text-gray-900 dark:text-white">
+                      <TableCell className="p-3">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {socio.nombre}
                         </div>
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.direccion || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                        {socio.direccion || <span className="text-gray-400 dark:text-gray-500 italic">Sin dirección</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.poblacion || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                        {socio.poblacion || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.provincia || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                        {socio.provincia || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.telefono || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                        {socio.telefono || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.email || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                        {socio.email || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.zona || <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                        {socio.zona || <span className="text-gray-400 dark:text-gray-500 italic">—</span>}
                       </TableCell>
-                      <TableCell className="p-2 text-sm text-gray-600 dark:text-gray-300">
-                        {socio.fecha_alta ? new Date(socio.fecha_alta).toLocaleDateString('es-ES') : <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      <TableCell className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                        {socio.fecha_alta ? (
+                          <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">
+                            {new Date(socio.fecha_alta).toLocaleDateString('es-ES')}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500 italic">—</span>
+                        )}
                       </TableCell>
-                      <TableCell className="p-2">
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-center">
+                      <TableCell className="p-3">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                           {obtenerParientes(socio.id).length} pariente{obtenerParientes(socio.id).length !== 1 ? 's' : ''}
                         </span>
                       </TableCell>
-                      <TableCell className="p-2">
-                        <div className="flex items-center gap-2">
+                      <TableCell className="p-3">
+                        <div className="flex items-center gap-1 scale-120">
                           <button
                             onClick={(e) => { e.stopPropagation(); abrirParientes(socio); }}
-                            className="inline-flex items-center rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition-all hover:bg-blue-100 hover:scale-105 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                            title="Ver parientes"
                           >
-                            Ver Parientes
+                            👥
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); imprimirEtiqueta(socio); }}
-                            className="inline-flex items-center rounded-md bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 transition-all hover:bg-green-100 hover:scale-105 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                            title="Imprimir etiqueta"
                           >
-                            Imprimir Etiqueta
+                            🖨️
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); confirmarEliminacionSocio(socio); }}
-                            className="inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                            className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition-all hover:bg-red-100 hover:scale-105 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                            title="Eliminar socio"
                           >
-                            Eliminar
+                            <TrashBinIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </TableCell>
@@ -438,45 +559,66 @@ export default function Socios() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Modal para agregar socio */}
       <Modal isOpen={modalSocio.isOpen} onClose={modalSocio.closeModal}>
-        <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 dark:bg-blue-900/30">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full max-h-[90vh] overflow-y-auto">
+          {/* Header mejorado */}
+          <div className="relative text-center mb-6 sm:mb-8">
+            <button
+              onClick={modalSocio.closeModal}
+              className="absolute right-0 top-0 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 dark:from-blue-900/30 dark:to-blue-800/30">
               <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Nuevo Socio</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Completa los datos para registrar un nuevo socio</p>
           </div>
           
           {/* Formulario */}
           <form onSubmit={(e) => { e.preventDefault(); agregarSocio(); }} className="space-y-4 sm:space-y-6">
             {/* Información Personal */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 sm:p-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-xl p-4 sm:p-5 border border-gray-200/50 dark:border-gray-700/50">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-sm sm:text-base">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
                 Información Personal
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Nombre completo <span className="text-red-500">*</span>
+                  </label>
                   <InputField
-                    placeholder="Nombre completo"
+                    placeholder="Ej: Juan Pérez García"
                     value={nuevoSocio.nombre}
                     onChange={(e) => setNuevoSocio({...nuevoSocio, nombre: e.target.value})}
                     required={true}
+                    className={`${!nuevoSocio.nombre ? 'border-red-200 focus:border-red-400' : ''}`}
                   />
+                  {!nuevoSocio.nombre && (
+                    <p className="text-xs text-red-500 mt-1">Este campo es obligatorio</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Alta</label>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Fecha de Alta <span className="text-red-500">*</span>
+                  </label>
                   <InputField
                     type="date"
                     value={nuevoSocio.fecha_alta}
@@ -488,86 +630,115 @@ export default function Socios() {
             </div>
 
             {/* Dirección */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 sm:p-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+            <div className="bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 rounded-xl p-4 sm:p-5 border border-green-200/50 dark:border-green-700/30">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-sm sm:text-base">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
                 Dirección
               </h4>
-              <div className="space-y-3 sm:space-y-4">
-                <InputField
-                  placeholder="Dirección completa"
-                  value={nuevoSocio.direccion}
-                  onChange={(e) => setNuevoSocio({...nuevoSocio, direccion: e.target.value})}
-                  required={true}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Dirección completa</label>
                   <InputField
-                    placeholder="Código postal"
-                    value={nuevoSocio.codigo_postal}
-                    onChange={(e) => setNuevoSocio({...nuevoSocio, codigo_postal: e.target.value})}
-                    required={true}
-                  />
-                  <InputField
-                    placeholder="Población"
-                    value={nuevoSocio.poblacion}
-                    onChange={(e) => setNuevoSocio({...nuevoSocio, poblacion: e.target.value})}
-                    required={true}
-                  />
-                  <InputField
-                    placeholder="Provincia"
-                    value={nuevoSocio.provincia}
-                    onChange={(e) => setNuevoSocio({...nuevoSocio, provincia: e.target.value})}
-                    className="sm:col-span-2 lg:col-span-1"
-                    required={true}
+                    placeholder="Ej: Calle Mayor, 123, 2ºB"
+                    value={nuevoSocio.direccion}
+                    onChange={(e) => setNuevoSocio({...nuevoSocio, direccion: e.target.value})}
                   />
                 </div>
-                <InputField
-                  placeholder="Zona"
-                  value={nuevoSocio.zona}
-                  onChange={(e) => setNuevoSocio({...nuevoSocio, zona: e.target.value})}
-                  required={true}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Código postal</label>
+                    <InputField
+                      placeholder="28001"
+                      value={nuevoSocio.codigo_postal}
+                      onChange={(e) => setNuevoSocio({...nuevoSocio, codigo_postal: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Población</label>
+                    <InputField
+                      placeholder="Madrid"
+                      value={nuevoSocio.poblacion}
+                      onChange={(e) => setNuevoSocio({...nuevoSocio, poblacion: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Provincia</label>
+                    <InputField
+                      placeholder="Madrid"
+                      value={nuevoSocio.provincia}
+                      onChange={(e) => setNuevoSocio({...nuevoSocio, provincia: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Zona</label>
+                  <InputField
+                    placeholder="Centro, Norte, Sur..."
+                    value={nuevoSocio.zona}
+                    onChange={(e) => setNuevoSocio({...nuevoSocio, zona: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Contacto */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 sm:p-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+            <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-900/10 rounded-xl p-4 sm:p-5 border border-purple-200/50 dark:border-purple-700/30">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-sm sm:text-base">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
                 Información de Contacto
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <InputField
-                  type="tel"
-                  placeholder="Teléfono"
-                  value={nuevoSocio.telefono}
-                  onChange={(e) => setNuevoSocio({...nuevoSocio, telefono: e.target.value})}
-                  required={true}
-                />
-
-                <InputField
-                  type="email"
-                  placeholder="Correo electrónico"
-                  value={nuevoSocio.email}
-                  onChange={(e) => setNuevoSocio({...nuevoSocio, email: e.target.value})}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
+                  <InputField
+                    type="tel"
+                    placeholder="600 123 456"
+                    value={nuevoSocio.telefono}
+                    onChange={(e) => setNuevoSocio({...nuevoSocio, telefono: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico</label>
+                  <InputField
+                    type="email"
+                    placeholder="ejemplo@correo.com"
+                    value={nuevoSocio.email}
+                    onChange={(e) => setNuevoSocio({...nuevoSocio, email: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
             
-            {/* Botones */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 order-2 sm:order-1">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Botones mejorados */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <Button 
+                type="submit" 
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 order-2 sm:order-1 shadow-lg"
+                disabled={!nuevoSocio.nombre}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Crear Socio
               </Button>
-              <Button type="button" variant="outline" onClick={modalSocio.closeModal} className="flex-1 order-1 sm:order-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={modalSocio.closeModal} 
+                className="flex-1 order-1 sm:order-2 py-3 px-6 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
                 Cancelar
               </Button>
             </div>
@@ -577,23 +748,61 @@ export default function Socios() {
 
       {/* Modal para ver/agregar parientes */}
       <Modal isOpen={modalParientes.isOpen} onClose={modalParientes.closeModal}>
-        <div className="p-6">
-          <h3 className="mb-4 text-lg font-semibold">
-            Parientes de {socioSeleccionado?.nombre}
-      </h3>
+        <div className="p-6 max-w-4xl mx-auto">
+          {/* Header mejorado */}
+          <div className="relative mb-6">
+            <button
+              onClick={modalParientes.closeModal}
+              className="absolute right-0 top-0 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center dark:from-blue-900/30 dark:to-blue-800/30">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Parientes de {socioSeleccionado?.nombre}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Gestiona los parientes asociados al socio</p>
+              </div>
+            </div>
+          </div>
           
-          {/* Información del socio */}
-          <div className="mb-4 rounded-lg bg-gray-50 p-2 dark:bg-gray-800">
-            <h4 className="font-medium text-gray-800 dark:text-white">Información de Contacto:</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {socioSeleccionado?.direccion && `Dirección: ${socioSeleccionado.direccion}`}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {socioSeleccionado?.telefono && `Teléfono: ${socioSeleccionado.telefono}`}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {socioSeleccionado?.email && `Email: ${socioSeleccionado.email}`}
-            </p>
+          {/* Información del socio mejorada */}
+          <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-900/10 p-4 border border-blue-200/50 dark:border-blue-700/30">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Información del Socio
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+              {socioSeleccionado?.direccion && (
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 dark:text-blue-400">📍</span>
+                  <span className="text-gray-700 dark:text-gray-300">{socioSeleccionado.direccion}</span>
+                </div>
+              )}
+              {socioSeleccionado?.telefono && (
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 dark:text-blue-400">📞</span>
+                  <span className="text-gray-700 dark:text-gray-300">{socioSeleccionado.telefono}</span>
+                </div>
+              )}
+              {socioSeleccionado?.email && (
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 dark:text-blue-400">✉️</span>
+                  <span className="text-gray-700 dark:text-gray-300">{socioSeleccionado.email}</span>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Tabla de parientes */}
@@ -670,52 +879,80 @@ export default function Socios() {
 
       {/* Modal para confirmar eliminación */}
       <Modal isOpen={modalConfirmarEliminacion.isOpen} onClose={modalConfirmarEliminacion.closeModal}>
-        <div className="p-6 sm:p-8 max-w-md mx-auto">
-          {/* Header con icono */}
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-red-900/30">
+        <div className="p-6 sm:p-8 max-w-lg mx-auto">
+          {/* Header con icono mejorado */}
+          <div className="relative text-center mb-6">
+            <button
+              onClick={modalConfirmarEliminacion.closeModal}
+              className="absolute right-0 top-0 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              aria-label="Cerrar modal"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4 dark:from-red-900/30 dark:to-red-800/30 animate-pulse">
               <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Confirmar Eliminación
+              ⚠️ Confirmar Eliminación
             </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Esta acción es irreversible</p>
           </div>
           
-          {/* Mensaje de confirmación */}
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-800 dark:text-red-200 text-center">
-              ¿Estás seguro de que quieres eliminar el socio
-            </p>
-            <p className="text-lg font-semibold text-red-900 dark:text-red-100 text-center mt-2">
-              {socioAEliminar?.nombre}
-            </p>
-            <p className="text-xs text-red-600 dark:text-red-300 text-center mt-2">
-              Esta acción no se puede deshacer y eliminará también todos sus parientes asociados.
-            </p>
+          {/* Mensaje de confirmación mejorado */}
+          <div className="bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-900/10 rounded-xl p-5 mb-6 border border-red-200/50 dark:border-red-700/30">
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 text-red-800 dark:text-red-200">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="font-medium">Socio a eliminar:</span>
+              </div>
+              <div className="bg-red-100 dark:bg-red-900/40 rounded-lg p-3">
+                <p className="text-lg font-bold text-red-900 dark:text-red-100">
+                  {socioAEliminar?.nombre}
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  ID: #{socioAEliminar?.id}
+                </p>
+              </div>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700/30">
+                <div className="flex items-center justify-center gap-2 text-yellow-800 dark:text-yellow-200 mb-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-medium text-sm">¡Atención!</span>
+                </div>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  Se eliminarán también todos los parientes asociados a este socio. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
           </div>
           
-          {/* Botones de acción */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+          {/* Botones de acción mejorados */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               variant="outline" 
               onClick={modalConfirmarEliminacion.closeModal}
-              className="w-full sm:w-auto order-2 sm:order-1"
+              className="flex-1 py-3 px-6 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 order-2 sm:order-1"
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
               Cancelar
             </Button>
             <Button
-              variant="primary"
-              onClick={() => {
-                ejecutarEliminacionSocio();
-              }}
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 order-1 sm:order-2"
+              onClick={ejecutarEliminacionSocio}
+              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 order-1 sm:order-2 shadow-lg"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Eliminar Socio
+              Eliminar Definitivamente
             </Button>
           </div>
         </div>

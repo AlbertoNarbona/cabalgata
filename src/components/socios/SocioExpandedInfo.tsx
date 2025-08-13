@@ -82,7 +82,7 @@ export default function SocioExpandedInfo({
               <InputField
                 value={socioEditado.nombre}
                 onChange={(e) => handleInputChange('nombre', e.target.value)}
-                className="text-xl font-bold"
+                className="text-xl font-bold bg-white"
                 placeholder="Nombre del socio"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400">Socio #{socio.id}</p>
@@ -90,14 +90,17 @@ export default function SocioExpandedInfo({
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+              
+              <span className="text-sm text-gray-700 dark:text-gray-400 mr-2">Fecha de Alta</span>
+
               <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <InputField
                 type="date"
-                value={socioEditado.fecha_alta}
+                value={socioEditado.fecha_alta ? new Date(socioEditado.fecha_alta).toISOString().split('T')[0] : ''}
                 onChange={(e) => handleInputChange('fecha_alta', e.target.value)}
-                className="text-sm"
+                className="text-sm bg-white"
               />
             </div>
             {hayCambios && (
