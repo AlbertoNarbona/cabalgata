@@ -89,7 +89,12 @@ export const cortejosService = {
   },
 
   // Eliminar cortejo
-  async deleteCortejo(id: number): Promise<{ cortejos: Cortejo[]; carrozas: Carroza[]; asignaciones: SocioCarroza[] }> {
+  async deleteCortejo(id: number): Promise<{ 
+    success: boolean; 
+    message: string; 
+    record: { id: number }; 
+    cascadeDeleted: { carrozas?: number; asignaciones?: number } 
+  }> {
     try {
       const response = await fetch(`${API_BASE_URL}/table/Cortejos/${id}`, {
         method: 'DELETE',
@@ -173,7 +178,12 @@ export const carrozasService = {
   },
 
   // Eliminar carroza
-  async deleteCarroza(id: number): Promise<{ carrozas: Carroza[]; asignaciones: SocioCarroza[]; asignacionesEliminadas: number }> {
+  async deleteCarroza(id: number): Promise<{ 
+    success: boolean; 
+    message: string; 
+    record: { id: number }; 
+    cascadeDeleted: { asignaciones?: number } 
+  }> {
     try {
       const response = await fetch(`${API_BASE_URL}/table/Carrozas/${id}`, {
         method: 'DELETE',

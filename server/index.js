@@ -3,6 +3,8 @@ const cors = require('cors');
 const mysql = require('mysql2');
 const path = require('path');
 const dotenv = require('dotenv');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Cargar variables de entorno desde el archivo .env
 // Especificar la ruta al archivo .env (ajustar si es necesario)
@@ -21,6 +23,13 @@ if (result.error) {
 }
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
+});
 const PORT = process.env.PORT || 3001;
 
 const poolConfig = {
@@ -36,6 +45,30 @@ const poolCabalgatas = mysql.createPool(poolConfig);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Configuración de Socket.IO
+io.on('connection', (socket) => {
+  console.log('👤 Usuario conectado:', socket.id);
+  
+  // Unirse a una sala específica (opcional)
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`👤 Usuario ${socket.id} se unió a la sala ${room}`);
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('👤 Usuario desconectado:', socket.id);
+  });
+});
+
+// Función auxiliar para emitir eventos en tiempo real
+const emitRealTimeUpdate = (event, data, room = null) => {
+  if (room) {
+    io.to(room).emit(event, data);
+  } else {
+    io.emit(event, data);
+  }
+};
 
 // Función para obtener datos de la base de datos
 const requestDB = ({query, values, errMsg}) => {
@@ -152,6 +185,26 @@ app.get('/api/tableSecondary/:table/:id', async (req, res) => {
   }
 });
 
+app.get('/api/tipoRecibo/:table/:tipo', async (req, res) => {
+  try {
+    const { table, tipo } = req.params;
+
+    let query;
+
+      query = `SELECT * FROM ?? WHERE tipo = ?`;
+
+      const data = await requestDB({query, values: [table, tipo], errMsg: `Error al obtener ${table} de tipo ${tipo}`});
+
+      return res.json(data);
+
+  } catch (error) {
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al obtener registros de tipo ' + tipo
+    });
+  }
+});
+
 app.post('/api/table/:table', async (req, res) => {
   try {
     const { table } = req.params;
@@ -165,10 +218,15 @@ app.post('/api/table/:table', async (req, res) => {
 
     const response = await requestDB({query, values, errMsg: 'Error al crear socio'});
 
+    const newRecord = {id: response.insertId, ...req.body};
+    
+    // Emitir evento en tiempo real
+    emitRealTimeUpdate(`${table}_created`, newRecord);
+
     return res.status(200).json({
       success: true,
       message: 'Registro creado correctamente',
-      record: {id: response.insertId, ...req.body}
+      record: newRecord
     });
     
   } catch (error) {
@@ -191,6 +249,9 @@ app.put('/api/table/:table', async (req, res) => {
     const values = [table, ...Object.values(req.body), id];  
 
     const response = await requestDB({query, values, errMsg: 'Error al actualizar socio'});
+    
+    // Emitir evento en tiempo real
+    emitRealTimeUpdate(`${table}_updated`, req.body);
     
     return res.status(200).json({
       success: true,
@@ -222,21 +283,112 @@ app.delete('/api/table/:table/:id', async (req, res) => {
     const response = await requestDB({query, values, errMsg: 'Error al eliminar socio'});
 
     let responseParientes = null;
-    if (table === 'Socios') {
-    // Eliminar parientes del socio
-    const queryParientes = `DELETE FROM Parientes WHERE socio_id = ?`;
-    const valuesParientes = [id];
-    responseParientes = await requestDB({query: queryParientes, values: valuesParientes, errMsg: 'Error al eliminar parientes'});
+    let responseCarrozas = null;
+    let responseAsignaciones = null;
     
-    await reorganizarIds(id);
+    if (table === 'Socios') {
+      // Eliminar parientes del socio
+      const queryParientes = `DELETE FROM Parientes WHERE socio_id = ?`;
+      const valuesParientes = [id];
+      responseParientes = await requestDB({query: queryParientes, values: valuesParientes, errMsg: 'Error al eliminar parientes'});
+      
+      await reorganizarIds(id);
+    } else if (table === 'Cortejos') {
+      // Eliminar en cascada: Cortejo -> Carrozas -> Asignaciones
+      console.log(`🗑️ Eliminando cortejo ${id} y todos sus elementos relacionados`);
+      
+      // 1. Obtener todas las carrozas del cortejo
+      const queryGetCarrozas = `SELECT id FROM Carrozas WHERE cortejo_id = ?`;
+      const carrozas = await requestDB({
+        query: queryGetCarrozas, 
+        values: [id], 
+        errMsg: 'Error al obtener carrozas del cortejo'
+      });
+      
+      // 2. Eliminar todas las asignaciones de todas las carrozas del cortejo
+      if (carrozas.length > 0) {
+        const carrozaIds = carrozas.map(c => c.id);
+        const placeholders = carrozaIds.map(() => '?').join(',');
+        const queryDeleteAsignaciones = `DELETE FROM Socios_Carrozas WHERE carroza_id IN (${placeholders})`;
+        
+        const deletedAsignaciones = await requestDB({
+          query: queryDeleteAsignaciones,
+          values: carrozaIds,
+          errMsg: 'Error al eliminar asignaciones de carrozas'
+        });
+        
+        console.log(`🗑️ Eliminadas ${deletedAsignaciones.affectedRows} asignaciones`);
+        
+        // Emitir eventos para cada asignación eliminada (aproximado)
+        for (let i = 0; i < deletedAsignaciones.affectedRows; i++) {
+          emitRealTimeUpdate('Socios_Carrozas_deleted', { id: `cascade_${Date.now()}_${i}` });
+        }
+      }
+      
+      // 3. Eliminar todas las carrozas del cortejo
+      const queryDeleteCarrozas = `DELETE FROM Carrozas WHERE cortejo_id = ?`;
+      responseCarrozas = await requestDB({
+        query: queryDeleteCarrozas,
+        values: [id],
+        errMsg: 'Error al eliminar carrozas del cortejo'
+      });
+      
+      console.log(`🗑️ Eliminadas ${responseCarrozas.affectedRows} carrozas`);
+      
+      // Emitir eventos para carrozas eliminadas
+      carrozas.forEach(carroza => {
+        emitRealTimeUpdate('Carrozas_deleted', { id: carroza.id });
+      });
+      
+    } else if (table === 'Carrozas') {
+      // Eliminar en cascada: Carroza -> Asignaciones
+      console.log(`🗑️ Eliminando carroza ${id} y todas sus asignaciones`);
+      
+      // 1. Eliminar todas las asignaciones de la carroza
+      const queryDeleteAsignaciones = `DELETE FROM Socios_Carrozas WHERE carroza_id = ?`;
+      responseAsignaciones = await requestDB({
+        query: queryDeleteAsignaciones,
+        values: [id],
+        errMsg: 'Error al eliminar asignaciones de la carroza'
+      });
+      
+      console.log(`🗑️ Eliminadas ${responseAsignaciones.affectedRows} asignaciones de la carroza`);
+      
+      // Emitir eventos para asignaciones eliminadas (aproximado)
+      for (let i = 0; i < responseAsignaciones.affectedRows; i++) {
+        emitRealTimeUpdate('Socios_Carrozas_deleted', { id: `cascade_${Date.now()}_${i}` });
+      }
     }
 
-    return res.json({
+    // Emitir evento en tiempo real
+    emitRealTimeUpdate(`${table}_deleted`, { id: parseInt(id) });
+    
+    // Construir respuesta con información de eliminación en cascada
+    const responseData = {
       success: true,
       message: 'Registro eliminado correctamente',
       record: {id, ...response},
-      parientes: responseParientes
-    });
+      cascadeDeleted: {}
+    };
+    
+    if (responseParientes) {
+      responseData.cascadeDeleted.parientes = responseParientes.affectedRows;
+    }
+    
+    if (responseCarrozas) {
+      responseData.cascadeDeleted.carrozas = responseCarrozas.affectedRows;
+    }
+    
+    if (responseAsignaciones) {
+      responseData.cascadeDeleted.asignaciones = responseAsignaciones.affectedRows;
+    }
+    
+    // Log para debugging
+    if (Object.keys(responseData.cascadeDeleted).length > 0) {
+      console.log(`✅ Eliminación en cascada completada:`, responseData.cascadeDeleted);
+    }
+
+    return res.json(responseData);
   } catch (error) {
     console.log('error', error);
     return res.status(500).json({
@@ -314,8 +466,9 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🔌 WebSocket servidor en puerto ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📈 Estadísticas: http://localhost:${PORT}/api/stats`);
 }); 

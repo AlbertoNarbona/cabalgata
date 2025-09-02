@@ -13,6 +13,8 @@ import {
 } from '../../services/cortejosService';
 import { sociosService, Socio } from '../../services/sociosService';
 import { TrashBinIcon } from '../../icons';
+import { useRealTimeData } from '../../hooks/useRealTimeData';
+import { toast } from 'react-toastify';
 
 type ElementoAEliminar = {
   tipo: 'cortejo' | 'carroza' | 'asignacion';
@@ -27,11 +29,36 @@ interface Pariente {
 }
 
 export default function Cortejos() {
-  const [cortejos, setCortejos] = useState<Cortejo[]>([]);
-  const [carrozas, setCarrozas] = useState<Carroza[]>([]);
+  const [cortejosIniciales, setCortejosIniciales] = useState<Cortejo[]>([]);
+  const [carrozasIniciales, setCarrozasIniciales] = useState<Carroza[]>([]);
   const [socios, setSocios] = useState<Socio[]>([]);
   const [parientes, setParientes] = useState<Pariente[]>([]);
-  const [asignaciones, setAsignaciones] = useState<SocioCarroza[]>([]);
+  const [asignacionesIniciales, setAsignacionesIniciales] = useState<SocioCarroza[]>([]);
+
+  // Hooks de tiempo real
+  const { data: cortejos } = useRealTimeData<Cortejo>({
+    initialData: cortejosIniciales,
+    eventPrefix: 'Cortejos',
+    onCreated: (cortejo) => console.log('Nuevo cortejo:', cortejo.nombre),
+    onUpdated: (cortejo) => console.log('Cortejo actualizado:', cortejo.nombre),
+    onDeleted: (id) => console.log('Cortejo eliminado:', id)
+  });
+
+  const { data: carrozas } = useRealTimeData<Carroza>({
+    initialData: carrozasIniciales,
+    eventPrefix: 'Carrozas',
+    onCreated: (carroza) => console.log('Nueva carroza:', carroza.nombre),
+    onUpdated: (carroza) => console.log('Carroza actualizada:', carroza.nombre),
+    onDeleted: (id) => console.log('Carroza eliminada:', id)
+  });
+
+  const { data: asignaciones } = useRealTimeData<SocioCarroza>({
+    initialData: asignacionesIniciales,
+    eventPrefix: 'Socios_Carrozas',
+    onCreated: (asignacion) => console.log('Nueva asignación:', asignacion.id),
+    onUpdated: (asignacion) => console.log('Asignación actualizada:', asignacion.id),
+    onDeleted: (id) => console.log('Asignación eliminada:', id)
+  });
   const [cortejoSeleccionado, setCortejoSeleccionado] =
     useState<Cortejo | null>(null);
   const [carrozaSeleccionada, setCarrozaSeleccionada] =
@@ -164,7 +191,7 @@ export default function Cortejos() {
           res.json()
         ),
       ]);
-      setCortejos(cortejosData);
+      setCortejosIniciales(cortejosData);
       setSocios(sociosData);
       setParientes(parientesData);
     } catch (err) {
@@ -181,7 +208,7 @@ export default function Cortejos() {
         cortejoId
       );
       console.log('Carrozas cargadas:', carrozasData);
-      setCarrozas(carrozasData);
+      setCarrozasIniciales(carrozasData);
     } catch (err) {
       setError('Error al cargar carrozas');
       console.error('Error cargando carrozas:', err);
@@ -193,7 +220,7 @@ export default function Cortejos() {
       const asignacionesData = await sociosCarrozasService.getSociosByCarroza(
         carrozaId
       );
-      setAsignaciones(asignacionesData);
+      setAsignacionesIniciales(asignacionesData);
     } catch (err) {
       setError('Error al cargar asignaciones');
       console.error('Error cargando asignaciones:', err);
@@ -210,7 +237,7 @@ export default function Cortejos() {
         )
       );
       const asignacionesCompletas = todasLasAsignaciones.flat();
-      setAsignaciones(asignacionesCompletas);
+      setAsignacionesIniciales(asignacionesCompletas);
     } catch (err) {
       setError('Error al cargar todas las asignaciones');
       console.error('Error cargando todas las asignaciones:', err);
@@ -225,10 +252,10 @@ export default function Cortejos() {
   useEffect(() => {
     if (cortejoSeleccionado) {
       cargarCarrozas(cortejoSeleccionado.id);
-      setAsignaciones([]); // Limpiar asignaciones al cambiar cortejo
+      setAsignacionesIniciales([]); // Limpiar asignaciones al cambiar cortejo
     } else {
-      setCarrozas([]);
-      setAsignaciones([]);
+      setCarrozasIniciales([]);
+      setAsignacionesIniciales([]);
     }
   }, [cortejoSeleccionado]);
 
@@ -259,7 +286,7 @@ export default function Cortejos() {
           nombre: nuevoCortejo.nombre,
           ano: nuevoCortejo.ano,
         });
-        setCortejos([...cortejos, result.record]);
+        setCortejosIniciales([...cortejosIniciales, result.record]);
         setNuevoCortejo({ nombre: '', ano: new Date().getFullYear() });
         modalCortejo.closeModal();
       } catch (err) {
@@ -274,34 +301,36 @@ export default function Cortejos() {
       const result = await cortejosService.deleteCortejo(id);
       console.log('Resultado de eliminar cortejo:', result);
       
-      // Verificar que result.cortejos existe y es un array
-      if (result && result.cortejos && Array.isArray(result.cortejos)) {
-        setCortejos(result.cortejos);
-        console.log('Cortejos actualizados:', result.cortejos);
-      } else {
-        console.error('Respuesta inesperada del servidor:', result);
-        // Recargar los cortejos desde el servidor como fallback
-        const cortejosActualizados = await cortejosService.getCortejos();
-        setCortejos(cortejosActualizados);
+      // Los cortejos se actualizarán automáticamente por WebSocket
+      // Mostrar información sobre la eliminación en cascada
+      const { cascadeDeleted } = result;
+      let mensaje = 'Cortejo eliminado correctamente';
+      
+      if (cascadeDeleted?.carrozas || cascadeDeleted?.asignaciones) {
+        const detalles = [];
+        if (cascadeDeleted.carrozas) detalles.push(`${cascadeDeleted.carrozas} carrozas`);
+        if (cascadeDeleted.asignaciones) detalles.push(`${cascadeDeleted.asignaciones} asignaciones`);
+        mensaje += `. También se eliminaron: ${detalles.join(' y ')}`;
       }
+      
+      toast.success(mensaje);
       
       // Si se eliminó el cortejo seleccionado, limpiar la selección
       if (cortejoSeleccionado?.id === id) {
         setCortejoSeleccionado(null);
         setCarrozaSeleccionada(null);
-        setCarrozas([]);
-        setAsignaciones([]);
+        setCarrozasIniciales([]);
+        setAsignacionesIniciales([]);
       }
       
-      // Mostrar mensaje de éxito
-      console.log(`Cortejo eliminado. Se eliminaron ${result.carrozas?.length || 0} carrozas y sus asignaciones.`);
+      console.log('Eliminación en cascada completada:', cascadeDeleted);
     } catch (err) {
       setError('Error al eliminar el cortejo');
       console.error('Error eliminando cortejo:', err);
       // En caso de error, recargar los cortejos
       try {
         const cortejosActualizados = await cortejosService.getCortejos();
-        setCortejos(cortejosActualizados);
+        setCortejosIniciales(cortejosActualizados);
       } catch (reloadErr) {
         console.error('Error al recargar cortejos:', reloadErr);
       }
@@ -330,7 +359,7 @@ export default function Cortejos() {
         
         // Recargar las carrozas desde el servidor para mantener sincronización
         const carrozasActualizadas = await carrozasService.getCarrozasByCortejo(cortejoSeleccionado.id);
-        setCarrozas(carrozasActualizadas);
+        setCarrozasIniciales(carrozasActualizadas);
         
         setNuevaCarroza({
           nombre: '',
@@ -355,23 +384,21 @@ export default function Cortejos() {
       const result = await carrozasService.deleteCarroza(id);
       console.log('Resultado de eliminar carroza:', result);
       
-      // Verificar que result.carrozas existe y es un array
-      if (result && result.carrozas && Array.isArray(result.carrozas)) {
-        setCarrozas(result.carrozas);
-        console.log('Carrozas actualizadas:', result.carrozas);
-      } else {
-        console.error('Respuesta inesperada del servidor:', result);
-        // Recargar las carrozas desde el servidor como fallback
-        if (cortejoSeleccionado) {
-          const carrozasActualizadas = await carrozasService.getCarrozasByCortejo(cortejoSeleccionado.id);
-          setCarrozas(carrozasActualizadas);
-        }
+      // Las carrozas se actualizarán automáticamente por WebSocket
+      // Mostrar información sobre la eliminación en cascada
+      const { cascadeDeleted } = result;
+      let mensaje = 'Carroza eliminada correctamente';
+      
+      if (cascadeDeleted?.asignaciones) {
+        mensaje += `. También se eliminaron ${cascadeDeleted.asignaciones} asignaciones`;
       }
+      
+      toast.success(mensaje);
       
       // Si se eliminó la carroza seleccionada, limpiar la selección
       if (carrozaSeleccionada?.id === id) {
         setCarrozaSeleccionada(null);
-        setAsignaciones([]);
+        setAsignacionesIniciales([]);
       } else {
         // Si no era la carroza seleccionada, actualizar las asignaciones
         if (cortejoSeleccionado) {
@@ -379,8 +406,7 @@ export default function Cortejos() {
         }
       }
       
-      // Mostrar mensaje de éxito
-      console.log(`Carroza eliminada. Se eliminaron ${result.asignacionesEliminadas} asignaciones.`);
+      console.log('Eliminación en cascada completada:', cascadeDeleted);
     } catch (err) {
       setError('Error al eliminar la carroza');
       console.error('Error eliminando carroza:', err);
@@ -388,7 +414,7 @@ export default function Cortejos() {
       try {
         if (cortejoSeleccionado) {
           const carrozasActualizadas = await carrozasService.getCarrozasByCortejo(cortejoSeleccionado.id);
-          setCarrozas(carrozasActualizadas);
+          setCarrozasIniciales(carrozasActualizadas);
         }
       } catch (reloadErr) {
         console.error('Error al recargar carrozas:', reloadErr);
@@ -433,7 +459,7 @@ export default function Cortejos() {
         // Actualizar solo las asignaciones de la carroza actual si está seleccionada
         if (carrozaSeleccionada) {
           const asignacionesActualizadas = await sociosCarrozasService.getSociosByCarroza(carrozaSeleccionada.id);
-          setAsignaciones(asignacionesActualizadas);
+          setAsignacionesIniciales(asignacionesActualizadas);
         }
       } catch (err) {
         setError('Error al crear la asignación');
@@ -480,7 +506,7 @@ export default function Cortejos() {
       // Actualizar solo las asignaciones de la carroza actual si está seleccionada
       if (carrozaSeleccionada) {
         const asignacionesActualizadas = await sociosCarrozasService.getSociosByCarroza(carrozaSeleccionada.id);
-        setAsignaciones(asignacionesActualizadas);
+        setAsignacionesIniciales(asignacionesActualizadas);
       }
     } catch (err) {
       setError('Error al eliminar la asignación');
@@ -760,7 +786,7 @@ export default function Cortejos() {
                       key={carroza.id}
                       className="group relative bg-white dark:bg-gray-800 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-105 border border-purple-100 dark:border-purple-800/50 hover:border-purple-300 dark:hover:border-purple-600"
                       onClick={() => {
-                        setAsignaciones([]);
+                        setAsignacionesIniciales([]);
                         setCarrozaSeleccionada(carroza);
                       }}>
                       

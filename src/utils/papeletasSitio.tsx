@@ -95,7 +95,6 @@ export function PapeletaSitio({ papeleta }: PapeletaSitioProps) {
                     {p?.id} {p?.nombre?.toUpperCase()}{' '}
                   </Text>
                 </View>
-                {console.log(p)}
 
                 <View style={{ display: 'flex', flexDirection: 'row' }}>
                   <Text style={styleLabel}>Asociado:</Text>

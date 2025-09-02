@@ -85,10 +85,12 @@ export const papeletasService = {
         )
       );
 
-      // Filtrar parientes que tienen asignaciones (sitios que contienen '_p')
+      // Filtrar parientes que tienen asignaciones específicas (sitios que contienen '_p' con su ID)
       const parientesAsignados = todosParientes.filter(pariente => 
         asignaciones.some(asignacion => 
-          asignacion.socio_id === pariente.socio_id && asignacion.sitio.includes('_p')
+          asignacion.socio_id === pariente.socio_id && 
+          asignacion.sitio.includes('_p') &&
+          asignacion.sitio.includes(`p${pariente.id}`)
         )
       );
 
@@ -173,7 +175,15 @@ export const papeletasService = {
           }
         } else {
           // Es el socio principal
-          const parientesDelSocio = todosParientes.filter(p => p.socio_id === socio.id);
+          // Solo incluir parientes que también estén asignados a carrozas
+          const parientesAsignados = todosParientes.filter(pariente => {
+            // Verificar si este pariente tiene alguna asignación
+            return asignaciones.some(asig => 
+              asig.socio_id === socio.id && 
+              asig.sitio.includes('_p') && 
+              asig.sitio.includes(`p${pariente.id}`)
+            );
+          });
           
           papeletas.push({
             id: asignacion.id,
@@ -187,7 +197,7 @@ export const papeletasService = {
               poblacion: socio.poblacion,
               provincia: socio.provincia
             },
-            parientes: parientesDelSocio.map(p => ({
+            parientes: parientesAsignados.map(p => ({
               id: p.id,
               nombre: p.nombre,
               tipo_relacion: p.tipo_relacion || null,

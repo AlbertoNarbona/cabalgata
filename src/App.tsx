@@ -4,6 +4,7 @@ import AppLayout from './layout/AppLayout';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import PageMeta from './components/common/PageMeta';
 import { ToastContainer } from 'react-toastify';
+import { WebSocketProvider } from './context/WebSocketContext';
 
 // Carga lazy de los componentes
 const SignIn = lazy(() => import('./pages/AuthPages/SignIn'));
@@ -32,7 +33,6 @@ const DocumentosFirmar = lazy(
 const Cortejos = lazy(() => import('./pages/Cortejos/Cortejos'));
 const Papeletas = lazy(() => import('./pages/Papeletas/Papeletas.tsx'));
 const Recibos = lazy(() => import('./pages/Recibos/Recibos.tsx'));
-const Donaciones = lazy(() => import('./pages/Donaciones/Donaciones'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -45,9 +45,10 @@ export default function App() {
   return (
     <>
       <PageMeta title="ReyeSilos" description="Reyes Silos" />
-      <Router>
-        <ScrollToTop />
-        <Suspense fallback={<LoadingFallback />}>
+      <WebSocketProvider>
+        <Router>
+          <ScrollToTop />
+          <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Dashboard Layout */}
             <Route element={<AppLayout />}>
@@ -63,8 +64,8 @@ export default function App() {
               <Route path="/papeletas" element={<Papeletas />} />
 
               {/* Tesorería */}
-              <Route path="/recibos" element={<Recibos />} />
-              <Route path="/donaciones" element={<Donaciones />} />
+              <Route path="/recibos" element={<Recibos key="recibos" tipo="recibo" />} />
+              <Route path="/donaciones" element={<Recibos key="donaciones" tipo="donacion" />} />
 
               {/* Others Page */}
               <Route path="/profile" element={<UserProfiles />} />
@@ -98,7 +99,8 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-      </Router>
+        </Router>
+      </WebSocketProvider>
       <div className="fixed top-4 right-4 z-[999999]">
         <ToastContainer
           position="top-right"

@@ -10,6 +10,7 @@ import Select from '../../components/form/Select';
 import { Modal } from '../../components/ui/modal';
 import { useModal } from '../../hooks/useModal';
 import { toast } from 'react-toastify';
+import { useRealTimeData } from '../../hooks/useRealTimeData';
 
 interface Recibo {
   id: string;
@@ -21,12 +22,44 @@ interface Recibo {
   concepto?: string;
 }
 
-export default function Recibos() {
+export default function Recibos({tipo}: {tipo: string}) {
+  console.log('tipo', tipo);
   const [socios, setSocios] = useState<Socio[]>([]);
   const [recibos, setRecibos] = useState<Recibo[]>([]);
-  const [recibosDB, setRecibosDB] = useState<ReciboDB[]>([]);
+  const [recibosIniciales, setRecibosIniciales] = useState<ReciboDB[]>([]);
   const [recibosFiltrados, setRecibosFiltrados] = useState<ReciboDB[]>([]);
-  const [pagos, setPagos] = useState<Pago[]>([]);
+  
+  // Hook de tiempo real para recibos
+  const { data: recibosDB, isConnected } = useRealTimeData<ReciboDB>({
+    initialData: recibosIniciales,
+    eventPrefix: 'Recibos',
+    onCreated: () => {
+      toast.success(`Nuevo ${tipo} creado`);
+    },
+    onUpdated: () => {
+      toast.info(`${tipo} actualizado`);
+    },
+    onDeleted: () => {
+      toast.warn(`${tipo} eliminado`);
+    }
+  });
+  
+  const [pagosIniciales, setPagosIniciales] = useState<Pago[]>([]);
+  
+  // Hook de tiempo real para pagos
+  const { data: pagos } = useRealTimeData<Pago>({
+    initialData: pagosIniciales,
+    eventPrefix: 'Pagos',
+    onCreated: () => {
+      toast.success('Nuevo pago registrado');
+    },
+    onUpdated: () => {
+      toast.info('Pago actualizado');
+    },
+    onDeleted: () => {
+      toast.warn('Pago eliminado');
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -78,6 +111,14 @@ export default function Recibos() {
     fecha_pago: new Date().toISOString().split('T')[0]
   });
   const [pagosRecibo, setPagosRecibo] = useState<Pago[]>([]);
+  
+  // Actualizar pagosRecibo cuando cambie la lista de pagos (tiempo real)
+  useEffect(() => {
+    if (reciboSeleccionado) {
+      const pagosFiltrados = pagos.filter(p => p.recibo_id === reciboSeleccionado.id);
+      setPagosRecibo(pagosFiltrados);
+    }
+  }, [pagos, reciboSeleccionado]);
 
   // Función para calcular total pagado de un recibo
   const getTotalPagado = useCallback((reciboId: number): number => {
@@ -99,13 +140,13 @@ export default function Recibos() {
         setLoading(true);
         const [sociosData, recibosData, pagosData] = await Promise.all([
           sociosService.getSocios(),
-          recibosService.getRecibos(),
-          pagosService.getPagos()
+          recibosService.getRecibos(tipo),
+          pagosService.getPagos(tipo)
         ]);
         setSocios(sociosData);
-        setRecibosDB(recibosData);
+        setRecibosIniciales(recibosData);
         setRecibosFiltrados(recibosData); // Inicializar con todos los recibos
-        setPagos(pagosData);
+        setPagosIniciales(pagosData);
         setError(null);
       } catch (err) {
         setError('Error al cargar los datos');
@@ -116,7 +157,7 @@ export default function Recibos() {
     };
 
     cargarDatos();
-  }, []);
+  }, [tipo]);
 
   // Filtrar recibos por búsqueda, zona y estado de pago
   useEffect(() => {
@@ -164,7 +205,8 @@ export default function Recibos() {
           importe: nuevoRecibo.importe,
           concepto: nuevoRecibo.concepto || undefined,
           zona: nuevoRecibo.zona || undefined,
-          direccion: nuevoRecibo.direccion || undefined
+          direccion: nuevoRecibo.direccion || undefined,
+          tipo: tipo
         });
 
         // Agregar a la lista local
@@ -179,7 +221,7 @@ export default function Recibos() {
         };
 
         setRecibos([...recibos, recibo]);
-        setRecibosDB([...recibosDB, record]);
+        // Los recibos se actualizarán automáticamente por WebSocket
         setRecibosFiltrados([...recibosFiltrados, record]);
         
         // Limpiar formulario
@@ -204,7 +246,7 @@ export default function Recibos() {
     try {
       await recibosService.deleteRecibo(parseInt(id));
       setRecibos(recibos.filter(recibo => recibo.id !== id));
-      setRecibosDB(recibosDB.filter(recibo => recibo.id !== parseInt(id)));
+      // Los recibos se actualizarán automáticamente por WebSocket
       setRecibosFiltrados(recibosFiltrados.filter(recibo => recibo.id !== parseInt(id)));
     } catch (err) {
       setError('Error al eliminar el recibo');
@@ -228,11 +270,11 @@ export default function Recibos() {
       if (campo === 'importe' && reciboActualizado.socioId) {
         const reciboDB = recibosDB.find(r => r.id === parseInt(id));
         if (reciboDB) {
-          const reciboActualizadoDB = await recibosService.updateRecibo({
+          await recibosService.updateRecibo({
             ...reciboDB,
             importe: valor as number
           });
-          setRecibosDB(recibosDB.map(r => r.id === parseInt(id) ? reciboActualizadoDB.record : r));
+          // Los recibos se actualizarán automáticamente por WebSocket
         }
       }
     } catch (err) {
@@ -249,7 +291,6 @@ export default function Recibos() {
 
   const agregarTodosLosRecibos = async () => {
     
-    console.log('recibosDB', recibosDB);
     const recibosConvertidos = recibosDB?.map(r => {
       const socio = socios.find(s => s.id === r.socio_id);
       return {
@@ -259,13 +300,13 @@ export default function Recibos() {
         zona: socio?.zona || '',
         importe: r?.importe,
         socioId: r.socio_id.toString(),
-        concepto: r.concepto
+        concepto: r.concepto,
+        tipo: tipo
       };
     }) || [];
     setRecibos(recibosConvertidos);
   };
 
-  console.log('recibos', recibos);
 
   // Función para abrir modal de edición
   const abrirEditarRecibo = (recibo: ReciboDB) => {
@@ -291,8 +332,7 @@ export default function Recibos() {
       console.log('reciboEditando', reciboEditando);
       console.log('reciboActualizado', record);
 
-      // Actualizar en la lista local
-      setRecibosDB(recibosDB.map(r => r.id === reciboEditando.id ? record : r));
+      // Los recibos se actualizarán automáticamente por WebSocket
       setRecibosFiltrados(recibosFiltrados.map(r => r.id === reciboEditando.id ? record : r));
 
       // Cerrar modal y limpiar estado
@@ -330,15 +370,15 @@ export default function Recibos() {
     }
 
     try {
-      const {record} = await pagosService.createPago({
+      await pagosService.createPago({
         recibo_id: reciboSeleccionado?.id,
         socio_id: reciboSeleccionado?.socio_id,
         fecha_pago: nuevoPago.fecha_pago,
-        cantidad: nuevoPago.cantidad
+        cantidad: nuevoPago.cantidad,
+        tipo: tipo
       });
 
-      // Actualizar la lista de pagos
-      setPagos([...pagos, record]);
+      // Los pagos se actualizarán automáticamente por WebSocket
       
       // Limpiar formulario y cerrar modal
       setNuevoPago({
@@ -358,7 +398,7 @@ export default function Recibos() {
   // Función para ver pagos de un recibo
   const verPagosRecibo = async (recibo: ReciboDB) => {
     try {
-      const pagosDelRecibo = await pagosService.getPagosByRecibo(recibo.id);
+      const pagosDelRecibo = await pagosService.getPagosByRecibo(recibo.id, tipo);
       setPagosRecibo(pagosDelRecibo);
       setReciboSeleccionado(recibo);
       modalVerPagos.openModal();
@@ -372,7 +412,7 @@ export default function Recibos() {
   const eliminarPago = async (pagoId: number) => {
     try {
       await pagosService.deletePago(pagoId);
-      setPagos(pagos.filter(p => p.id !== pagoId));
+      // Los pagos se actualizarán automáticamente por WebSocket
       setPagosRecibo(pagosRecibo.filter(p => p.id !== pagoId));
       toast.success('Pago eliminado correctamente');
     } catch (err) {
@@ -435,22 +475,36 @@ export default function Recibos() {
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center justify-between">
-        
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            {tipo === 'recibo' ? 'Recibos' : 'Donaciones'}
+          </h1>
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-xs text-gray-400">
+              {isConnected ? 'En tiempo real' : 'Desconectado'}
+            </span>
+          </div>
+        </div>
+        <div className="flex gap-2">
           <Button onClick={modalAgregarRecibo.openModal}>
-            Agregar Recibo Manual
+            Agregar {tipo === 'recibo' ? 'Recibo' : 'Donación'} Manual
           </Button>
           {recibos?.length > 0 && (
             <Button 
               onClick={() => {
-                setMostrandoRecibos(!mostrandoRecibos)
-                !mostrandoRecibos && setTimeout(() => {
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                }, 20);
+                setMostrandoRecibos(!mostrandoRecibos);
+                if (!mostrandoRecibos) {
+                  setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                  }, 20);
+                }
               }}
             >
               {mostrandoRecibos ? 'Ocultar Recibos' : `Imprimir Recibos (${recibos.length})`}
             </Button>
           )}
+        </div>
       </div>
 
       {/* Filtros */}
@@ -776,7 +830,7 @@ export default function Recibos() {
                             <InputField
                               type="number"
                               value={recibo.importe || ''}
-                              onChange={(e) => actualizarRecibo(recibo.id, 'importe', parseFloat(e.target.value) || 0)}
+                              onChange={(e) => actualizarRecibo(recibo.id.toString(), 'importe', parseFloat(e.target.value) || 0)}
                               className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors pr-8"
                               placeholder="0.00"
                               step="0.01"
@@ -1145,7 +1199,7 @@ export default function Recibos() {
                   ...nuevoPago, 
                   cantidad: parseFloat(e.target.value)
                 })}
-                step={0.01}
+                step="0.01"
                 max={reciboSeleccionado ? (Number(reciboSeleccionado.importe) - getTotalPagado(reciboSeleccionado.id)).toString() : undefined}
                 required={true}
               />

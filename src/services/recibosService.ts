@@ -7,6 +7,7 @@ export interface Recibo {
   importe: number;
   fecha_creacion: string;
   concepto: string;
+  tipo: string;
 }
 
 export interface ReciboConSocio extends Recibo {
@@ -24,9 +25,9 @@ const API_BASE_URL = import.meta.env.VITE_URL_SERVER;
 // Servicio para recibos
 export const recibosService = {
   // Obtener todos los recibos
-  async getRecibos(): Promise<Recibo[]> {
+  async getRecibos(tipo: string): Promise<Recibo[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/table/Recibos`);
+      const response = await fetch(`${API_BASE_URL}/tipoRecibo/Recibos/${tipo}`);
       if (!response.ok) {
         throw new Error('Error al obtener recibos');
       }
@@ -38,7 +39,7 @@ export const recibosService = {
   },
 
   // Crear nuevo recibo
-  async createRecibo(recibo: { socio_id: number; importe: number; concepto?: string; zona?: string; direccion?: string }): Promise<{success: boolean, message: string, record: Recibo}> {
+  async createRecibo(recibo: { socio_id: number; importe: number; concepto?: string; zona?: string; direccion?: string, tipo: string }): Promise<{success: boolean, message: string, record: Recibo}> {
     try {
       console.log('recibo', recibo);
       const response = await fetch(`${API_BASE_URL}/table/Recibos`, {
@@ -104,10 +105,10 @@ export const recibosService = {
   },
 
   // Obtener recibos con información del socio
-  async getRecibosConSocios(): Promise<ReciboConSocio[]> {
+  async getRecibosConSocios(tipo: string): Promise<ReciboConSocio[]> {
     try {
       const [recibos, socios] = await Promise.all([
-        this.getRecibos(),
+        this.getRecibos(tipo),
         fetch(`${API_BASE_URL}/table/Socios`).then(res => res.json())
       ]);
 

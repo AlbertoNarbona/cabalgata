@@ -10,11 +10,12 @@ import SearchSocios from "../../components/socios/SearchSocios";
 import SocioExpandedInfo from "../../components/socios/SocioExpandedInfo";
 import { toast } from "react-toastify";
 import { TrashBinIcon } from "../../icons";
+import { useRealTimeData } from "../../hooks/useRealTimeData";
 
 
 
 export default function Socios() {
-  const [socios, setSocios] = useState<Socio[]>([]);
+  const [sociosIniciales, setSociosIniciales] = useState<Socio[]>([]);
   const [parientes, setParientes] = useState<Pariente[]>([]);
   const [socioSeleccionado, setSocioSeleccionado] = useState<Socio | null>(null);
   const [parientesSocio, setParientesSocio] = useState<Pariente[]>([]);
@@ -23,6 +24,23 @@ export default function Socios() {
   const [sociosFiltrados, setSociosFiltrados] = useState<Socio[]>([]);
   const [mostrandoResultados, setMostrandoResultados] = useState(false);
   const [socioExpandido, setSocioExpandido] = useState<number | null>(null);
+
+  // Hook de tiempo real para socios
+  const { data: socios, isConnected } = useRealTimeData<Socio>({
+    initialData: sociosIniciales,
+    eventPrefix: 'Socios',
+    onCreated: (socio) => {
+      toast.success(`Nuevo socio creado: ${socio.nombre}`);
+    },
+    onUpdated: (socio) => {
+      toast.info(`Socio actualizado: ${socio.nombre}`);
+    },
+    onDeleted: (id) => {
+      toast.warn(`Socio eliminado (ID: ${id})`);
+      setSocioExpandido(null);
+      modalSocio.closeModal();
+    }
+  });
   
   // Modales
   const modalSocio = useModal();
@@ -66,7 +84,7 @@ export default function Socios() {
           sociosService.getSocios(),
           parientesService.getParientes()
         ]);
-        setSocios(sociosData);
+        setSociosIniciales(sociosData);
         setParientes(parientesData);
         setError(null);
       } catch (err) {
@@ -139,7 +157,7 @@ export default function Socios() {
           return toast.error(response?.message || 'Error al crear el socio');
         }
         
-        setSocios([...socios, response.record]);
+        // El nuevo socio se añadirá automáticamente por el WebSocket
         setNuevoSocio({
           nombre: "",
           direccion: "",
@@ -188,14 +206,11 @@ export default function Socios() {
     try {
       await sociosService.deleteSocio(id);
       
-      // Después de eliminar y reorganizar IDs, recargar todos los datos
-      const [sociosActualizados, parientesActualizados] = await Promise.all([
-        sociosService.getSocios(),
-        parientesService.getParientes()
-      ]);
-      
-      setSocios(sociosActualizados);
+      // Después de eliminar, recargar parientes ya que no tienen tiempo real aún
+      const parientesActualizados = await parientesService.getParientes();
       setParientes(parientesActualizados);
+      
+      // Los socios se actualizarán automáticamente por WebSocket
       
       // Limpiar búsqueda si estaba activa
       if (mostrandoResultados) {
@@ -227,14 +242,13 @@ export default function Socios() {
   // Función para actualizar socio
   const actualizarSocio = async (socioActualizado: Socio) => {
     try {
-      const socio = await sociosService.updateSocio(socioActualizado);
-      setSocios(prevSocios => 
-        prevSocios.map(s => s.id === socio.id ? socio : s)
-      );
+      await sociosService.updateSocio(socioActualizado);
+      // Los cambios se reflejarán automáticamente por WebSocket
+      
       // Si el socio actualizado está en los filtrados, actualizarlo también
       if (mostrandoResultados) {
         setSociosFiltrados(prevFiltrados => 
-          prevFiltrados.map(s => s.id === socio.id ? socio : s)
+          prevFiltrados.map(s => s.id === socioActualizado.id ? socioActualizado : s)
         );
       }
     } catch (err) {
@@ -303,10 +317,18 @@ export default function Socios() {
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90 mb-1">
             Gestión de Socios
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {loading ? 'Cargando...' : `${socios.length} socio${socios.length !== 1 ? 's' : ''} registrado${socios.length !== 1 ? 's' : ''}`}
-            {mostrandoResultados && ` • ${sociosFiltrados.length} en resultados`}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {loading ? 'Cargando...' : `${socios.length} socio${socios.length !== 1 ? 's' : ''} registrado${socios.length !== 1 ? 's' : ''}`}
+              {mostrandoResultados && ` • ${sociosFiltrados.length} en resultados`}
+            </p>
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs text-gray-400">
+                {isConnected ? 'En tiempo real' : 'Desconectado'}
+              </span>
+            </div>
+          </div>
         </div>
         <Button 
           onClick={modalSocio.openModal}

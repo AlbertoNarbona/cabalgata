@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { PapeletaSitio } from '../../utils/papeletasSitio.tsx';
 import { papeletasService, Papeleta as PapeletaReal, Socio, Pariente } from '../../services/papeletasService';
+import { useRealTimeData } from '../../hooks/useRealTimeData';
+import { SocioCarroza } from '../../services/cortejosService';
 
 export default function Papeletas() {
 
   // Estados para manejar los datos
-  const [socios, setSocios] = useState<Socio[]>([]);
-  const [parientes, setParientes] = useState<Pariente[]>([]);
+  const [sociosIniciales, setSociosIniciales] = useState<Socio[]>([]);
+  const [parientesIniciales, setParientesIniciales] = useState<Pariente[]>([]);
+  const [asignacionesIniciales, setAsignacionesIniciales] = useState<SocioCarroza[]>([]);
   const [papeletasReales, setPapeletasReales] = useState<PapeletaReal[]>([]);
   const [sociosSeleccionados, setSociosSeleccionados] = useState<string[]>([]);
   const [parientesSeleccionados, setParientesSeleccionados] = useState<string[]>([]);
@@ -15,16 +18,64 @@ export default function Papeletas() {
   const [activeTab, setActiveTab] = useState<'socios' | 'parientes'>('socios');
   const [busqueda, setBusqueda] = useState('');
 
+  // Hook de tiempo real para asignaciones (que afectan las papeletas)
+  const { isConnected } = useRealTimeData<SocioCarroza>({
+    initialData: asignacionesIniciales,
+    eventPrefix: 'Socios_Carrozas',
+    onCreated: () => {
+      console.log('Nueva asignación - actualizando papeletas');
+      recargarDatosDependientes();
+    },
+    onUpdated: () => {
+      console.log('Asignación actualizada - actualizando papeletas');
+      recargarDatosDependientes();
+    },
+    onDeleted: () => {
+      console.log('Asignación eliminada - actualizando papeletas');
+      recargarDatosDependientes();
+    }
+  });
+
+  // Datos derivados de las asignaciones
+  const [socios, setSocios] = useState<Socio[]>(sociosIniciales);
+  const [parientes, setParientes] = useState<Pariente[]>(parientesIniciales);
+
+  // Función para recargar datos que dependen de las asignaciones
+  const recargarDatosDependientes = async () => {
+    try {
+      const [asignados, papeletas] = await Promise.all([
+        papeletasService.getAsignados(),
+        papeletasService.getPapeletasReales()
+      ]);
+      
+      setSocios(asignados.socios);
+      setParientes(asignados.parientes);
+      setPapeletasReales(papeletas);
+      
+      console.log('Datos de papeletas actualizados en tiempo real');
+    } catch (err) {
+      console.error('Error recargando datos dependientes:', err);
+    }
+  };
+
   // Cargar datos al montar el componente
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         setLoading(true);
+        
+        // Cargar asignaciones para el tiempo real
+        const responseAsignaciones = await fetch(`${import.meta.env.VITE_URL_SERVER}/table/Socios_Carrozas`);
+        const asignacionesData = responseAsignaciones.ok ? await responseAsignaciones.json() : [];
+        setAsignacionesIniciales(asignacionesData);
+        
         const [asignados, papeletas] = await Promise.all([
           papeletasService.getAsignados(),
           papeletasService.getPapeletasReales()
         ]);
         
+        setSociosIniciales(asignados.socios);
+        setParientesIniciales(asignados.parientes);
         setSocios(asignados.socios);
         setParientes(asignados.parientes);
         setPapeletasReales(papeletas);
@@ -211,27 +262,55 @@ export default function Papeletas() {
       const socioEstaSeleccionado = sociosSeleccionados.includes(socioDelPariente);
       
       // Solo generar papeleta individual si el socio NO está seleccionado
-      // o si es una selección específica de pariente
       if (!socioEstaSeleccionado) {
-        const papeletaDelSocio = papeletasReales.find((p: PapeletaReal) => 
-          p.socio.id === parienteSeleccionado.socio_id
+        // Buscar la papeleta real específica de este pariente
+        const papeletaPariente = papeletasReales.find((p: PapeletaReal) => 
+          p.sitio.includes('_p') && p.sitio.includes(`p${parienteSeleccionado.id}`)
         );
 
-        if (papeletaDelSocio) {
-          const key = `pariente_${parienteSeleccionado.id}`;
+        if (papeletaPariente) {
+          const key = `pariente_solo_${parienteSeleccionado.id}`;
           if (!papeletasYaGeneradas.has(key)) {
+            // Generar papeleta SOLO para el pariente, sin incluir al socio como participante
             papeletasGeneradas.push({
-              ...papeletaDelSocio,
-              id: papeletaDelSocio.id * 1000 + parienteSeleccionado.id,
-              sitio: `${papeletaDelSocio.sitio}_p${parienteSeleccionado.id}`,
+              ...papeletaPariente,
+              id: papeletaPariente.id,
+              sitio: papeletaPariente.sitio,
               parientes: [{
                 id: parienteSeleccionado.id,
                 nombre: parienteSeleccionado.nombre,
                 tipo_relacion: parienteSeleccionado.tipo_relacion || null,
-                socio_nombre: papeletaDelSocio.socio.nombre
+                socio_nombre: papeletaPariente.socio.nombre
               }]
             });
             papeletasYaGeneradas.add(key);
+          }
+        } else {
+          // Fallback: Si no existe papeleta específica, crear una basada en el socio pero solo para el pariente
+          const papeletaDelSocio = papeletasReales.find((p: PapeletaReal) => 
+            p.socio.id === parienteSeleccionado.socio_id && !p.sitio.includes('_p')
+          );
+
+          if (papeletaDelSocio) {
+            const key = `pariente_fallback_${parienteSeleccionado.id}`;
+            if (!papeletasYaGeneradas.has(key)) {
+              
+              console.log(papeletaDelSocio)
+              
+              papeletasGeneradas.push({
+                ...papeletaDelSocio,
+                id: papeletaDelSocio.id * 1000 + parienteSeleccionado.id,
+                sitio: `${papeletaDelSocio.sitio}_p${parienteSeleccionado.id}`,
+                tipo: 'beduino', // Los parientes suelen ser beduinos
+                parientes: [{
+                  id: parienteSeleccionado.id,
+                  nombre: parienteSeleccionado.nombre,
+                  tipo_relacion: parienteSeleccionado.tipo_relacion || null,
+                  socio_nombre: papeletaDelSocio.socio.nombre
+                }]
+              });
+              papeletasYaGeneradas.add(key);
+            }
           }
         }
       }
@@ -303,9 +382,17 @@ export default function Papeletas() {
   if (!loading && socios.length === 0 && parientes.length === 0) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-        <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
-          Papeletas de Sitio
-        </h3>
+        <div className="mb-5 flex items-center justify-between lg:mb-7">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            Papeletas de Sitio
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-xs text-gray-400">
+              {isConnected ? 'En tiempo real' : 'Desconectado'}
+            </span>
+          </div>
+        </div>
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -331,9 +418,17 @@ export default function Papeletas() {
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-      <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
-        Papeletas de Sitio
-      </h3>
+      <div className="mb-5 flex items-center justify-between lg:mb-7">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Papeletas de Sitio
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <span className="text-xs text-gray-400">
+            {isConnected ? 'En tiempo real' : 'Desconectado'}
+          </span>
+        </div>
+      </div>
 
       {/* Selector de participantes */}
       <div className="mb-6">
@@ -567,9 +662,7 @@ export default function Papeletas() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>
-                Generando {papeletasParaGenerar.length} papeleta{papeletasParaGenerar.length !== 1 ? 's' : ''} 
-                {sociosSeleccionados.length > 0 && ` (${sociosSeleccionados.length} socio${sociosSeleccionados.length !== 1 ? 's' : ''} seleccionado${sociosSeleccionados.length !== 1 ? 's' : ''})`}
-                {parientesSeleccionados.length > 0 && ` (${parientesSeleccionados.length} pariente${parientesSeleccionados.length !== 1 ? 's' : ''} seleccionado${parientesSeleccionados.length !== 1 ? 's' : ''})`}
+                Generando {papeletasParaGenerar.length} papeleta{papeletasParaGenerar.length !== 1 ? 's' : ''}
               </span>
             </div>
           )}
@@ -595,14 +688,30 @@ export default function Papeletas() {
                 pariente: p.socio.nombre,
               };
             }
-            return {
-              id: pariente.id.toString(), // ID del pariente
-              nombre: p.socio.nombre, // Nombre del socio
-              carroza: p.carroza,
-              tipo: p.tipo,
-              sitio: p.sitio.split('_')[0], // Solo el número del sitio
-              pariente: pariente.nombre, // Nombre del pariente
-            };
+            // Verificar si es una papeleta SOLO de pariente (socio no seleccionado)
+            const socioEstaSeleccionado = sociosSeleccionados.includes(p.socio.id.toString());
+            
+            if (!socioEstaSeleccionado) {
+              // Papeleta SOLO para el pariente - el pariente es el protagonista
+              return {
+                id: pariente.id.toString(), // ID del pariente
+                nombre: pariente.nombre, // Nombre del pariente como protagonista
+                carroza: p.carroza,
+                tipo: p.tipo,
+                sitio: p.sitio.split('_')[0], // Solo el número del sitio
+                pariente: `Familiar de ${p.socio.nombre}`, // Indicar la relación
+              };
+            } else {
+              // Papeleta donde tanto socio como pariente están seleccionados
+              return {
+                id: pariente.id.toString(), // ID del pariente
+                nombre: p.socio.nombre, // Nombre del socio
+                carroza: p.carroza,
+                tipo: p.tipo,
+                sitio: p.sitio.split('_')[0], // Solo el número del sitio
+                pariente: pariente.nombre, // Nombre del pariente
+              };
+            }
           } else {
             // Es una papeleta de socio
             return {
