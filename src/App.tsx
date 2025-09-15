@@ -5,12 +5,15 @@ import { ScrollToTop } from './components/common/ScrollToTop';
 import PageMeta from './components/common/PageMeta';
 import { ToastContainer } from 'react-toastify';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Carga lazy de los componentes
 const SignIn = lazy(() => import('./pages/AuthPages/SignIn'));
 const SignUp = lazy(() => import('./pages/AuthPages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/AuthPages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/AuthPages/ResetPassword'));
 const NotFound = lazy(() => import('./pages/OtherPage/NotFound'));
-const UserProfiles = lazy(() => import('./pages/UserProfiles'));
 const Videos = lazy(() => import('./pages/UiElements/Videos'));
 const Images = lazy(() => import('./pages/UiElements/Images'));
 const Alerts = lazy(() => import('./pages/UiElements/Alerts'));
@@ -45,75 +48,86 @@ export default function App() {
   return (
     <>
       <PageMeta title="ReyeSilos" description="Reyes Silos" />
-      <WebSocketProvider>
-        <Router>
-          <ScrollToTop />
-          <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Dashboard Layout */}
-            <Route element={<AppLayout />}>
-              {/*<Route index path="/" element={<Home />} />*/}
+      <AuthProvider>
+        <WebSocketProvider>
+          <Router>
+            <ScrollToTop />
+            <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Dashboard Layout - Rutas Protegidas */}
+              <Route element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }>
+                {/* Página principal - Dashboard */}
+                <Route path="/dashboard" element={<Socios />} />
+                <Route path="/" element={<Socios />} />
 
-              {/* Socios */}
-              <Route path="/" element={<Socios />} />
-              <Route path="/etiquetas" element={<ImprimirEtiquetas />} />
+                {/* Socios */}
+                <Route path="/socios" element={<Socios />} />
+                <Route path="/etiquetas" element={<ImprimirEtiquetas />} />
 
-              {/* Secretaría */}
-              <Route path="/documentos" element={<DocumentosFirmar />} />
-              <Route path="/cortejos" element={<Cortejos />} />
-              <Route path="/papeletas" element={<Papeletas />} />
+                {/* Secretaría */}
+                <Route path="/documentos" element={<DocumentosFirmar />} />
+                <Route path="/cortejos" element={<Cortejos />} />
+                <Route path="/papeletas" element={<Papeletas />} />
 
-              {/* Tesorería */}
-              <Route path="/recibos" element={<Recibos key="recibos" tipo="recibo" />} />
-              <Route path="/donaciones" element={<Recibos key="donaciones" tipo="donacion" />} />
+                {/* Tesorería */}
+                <Route path="/recibos" element={<Recibos key="recibos" tipo="recibo" />} />
+                <Route path="/donaciones" element={<Recibos key="donaciones" tipo="donacion" />} />
 
-              {/* Others Page */}
-              <Route path="/profile" element={<UserProfiles />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/blank" element={<Blank />} />
+                {/* Others Page */}
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/blank" element={<Blank />} />
 
-              {/* Forms */}
-              <Route path="/form-elements" element={<FormElements />} />
+                {/* Forms */}
+                <Route path="/form-elements" element={<FormElements />} />
 
-              {/* Tables */}
-              <Route path="/basic-tables" element={<BasicTables />} />
+                {/* Tables */}
+                <Route path="/basic-tables" element={<BasicTables />} />
 
-              {/* Ui Elements */}
-              <Route path="/alerts" element={<Alerts />} />
-              <Route path="/avatars" element={<Avatars />} />
-              <Route path="/badge" element={<Badges />} />
-              <Route path="/buttons" element={<Buttons />} />
-              <Route path="/images" element={<Images />} />
-              <Route path="/videos" element={<Videos />} />
+                {/* Ui Elements */}
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/avatars" element={<Avatars />} />
+                <Route path="/badge" element={<Badges />} />
+                <Route path="/buttons" element={<Buttons />} />
+                <Route path="/images" element={<Images />} />
+                <Route path="/videos" element={<Videos />} />
 
-              {/* Charts */}
-              <Route path="/line-chart" element={<LineChart />} />
-              <Route path="/bar-chart" element={<BarChart />} />
-            </Route>
+                {/* Charts */}
+                <Route path="/line-chart" element={<LineChart />} />
+                <Route path="/bar-chart" element={<BarChart />} />
+              </Route>
 
-            {/* Auth Layout */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
+              {/* Auth Layout - Rutas Públicas */}
+              <Route path="/login" element={<SignIn />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/register" element={<SignUp />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Fallback Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        </Router>
-      </WebSocketProvider>
-      <div className="fixed top-4 right-4 z-[999999]">
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-      </div>
+              {/* Fallback Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          </Router>
+        </WebSocketProvider>
+        <div className="fixed top-4 right-4 z-[999999]">
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </div>
+      </AuthProvider>
     </>
   );
 }

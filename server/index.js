@@ -5,6 +5,8 @@ const path = require('path');
 const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const { router: authRouter, verifyToken } = require('./routes/auth');
 
 // Cargar variables de entorno desde el archivo .env
 // Especificar la ruta al archivo .env (ajustar si es necesario)
@@ -42,9 +44,20 @@ const poolConfig = {
 
 const poolCabalgatas = mysql.createPool(poolConfig);
 
-// Middleware
+// Middleware de seguridad
+app.use(helmet({
+  contentSecurityPolicy: false, // Desactivar para desarrollo
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware para pasar requestDB a las rutas de autenticación
+app.use((req, res, next) => {
+  req.requestDB = requestDB;
+  next();
+});
 
 // Configuración de Socket.IO
 io.on('connection', (socket) => {
@@ -76,6 +89,9 @@ const requestDB = ({query, values, errMsg}) => {
     let queryParams;
     queryParams = values ? mysql.format(query, values) : query;
 
+    console.log('queryParams: ' + queryParams);
+    console.log('query: ' + query);
+    
     poolCabalgatas.query(queryParams, (err, results) => {
       if (err) {
         reject(`Error manejado: ${errMsg}. Error devuelto: ${err}`);
@@ -123,6 +139,9 @@ const reorganizarIds = async (idEliminado) => {
     throw error;
   }
 };
+
+// Rutas de autenticación
+app.use('/api/auth', authRouter);
 
 // Rutas para socios
 app.get('/api/table/:table/:id', async (req, res) => {

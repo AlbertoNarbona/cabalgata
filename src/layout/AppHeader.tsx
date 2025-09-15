@@ -3,11 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
+import { useAuth } from "../context/AuthContext";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const [isUserMenuOpen, setUserMenuOpen] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { user, logout } = useAuth();
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -19,6 +22,14 @@ const AppHeader: React.FC = () => {
 
   const toggleApplicationMenu = () => {
     setApplicationMenuOpen(!isApplicationMenuOpen);
+  };
+
+  const toggleUserMenu = () => {
+    setUserMenuOpen(!isUserMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -126,6 +137,56 @@ const AppHeader: React.FC = () => {
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
+
+            {/* <!-- User Menu --> */}
+            <div className="relative">
+              <button
+                onClick={toggleUserMenu}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center text-white font-medium">
+                  {user?.usuario?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="hidden sm:block">
+                  {user?.usuario || 'Usuario'}
+                </span>
+                <svg
+                  className={`w-4 h-4 transform transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* <!-- Dropdown Menu --> */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 z-50 w-48 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700">
+                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {user?.usuario}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <div className="py-1">
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                      <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* <!-- User Menu --> */}
           </div>
         </div>
       </div>
