@@ -4,9 +4,9 @@
 
 Se ha implementado un sistema de autenticación completo y seguro que incluye:
 
-- ✅ **Login seguro** con validación de usuario y contraseña
+- ✅ **Login seguro** con validación de usuario y contrasena
 - ✅ **Registro de usuarios** con validaciones robustas 
-- ✅ **Recuperación de contraseña** por email
+- ✅ **Recuperación de contrasena** por email
 - ✅ **Hash de contraseñas** con bcryptjs (12 rounds)
 - ✅ **Tokens JWT** para sesiones seguras
 - ✅ **Rate limiting** para prevenir ataques de fuerza bruta
@@ -62,7 +62,7 @@ CLIENT_URL=http://localhost:5173
 # JWT (¡IMPORTANTE! Cambia en producción)
 JWT_SECRET=tu_clave_secreta_muy_segura_cambiala_en_produccion_con_al_menos_32_caracteres
 
-# Email (para recuperar contraseña)
+# Email (para recuperar contrasena)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=tu_email@gmail.com
@@ -83,8 +83,8 @@ SMTP_PASS=tu_contraseña_de_aplicacion_gmail
 - `POST /api/auth/login` - Iniciar sesión
 - `POST /api/auth/register` - Registro de usuario
 - `POST /api/auth/forgot-password` - Solicitar recuperación
-- `POST /api/auth/reset-password` - Restablecer contraseña
-- `POST /api/auth/change-password` - Cambiar contraseña (autenticado)
+- `POST /api/auth/reset-password` - Restablecer contrasena
+- `POST /api/auth/change-password` - Cambiar contrasena (autenticado)
 - `GET /api/auth/verify-token` - Verificar token JWT
 
 ### Frontend (React/TypeScript)
@@ -94,19 +94,19 @@ SMTP_PASS=tu_contraseña_de_aplicacion_gmail
 - `src/context/AuthContext.tsx` - Contexto global de autenticación
 - `src/components/auth/SignInForm.tsx` - Formulario de login
 - `src/components/auth/SignUpForm.tsx` - Formulario de registro
-- `src/components/auth/ForgotPasswordForm.tsx` - Recuperar contraseña
-- `src/components/auth/ResetPasswordForm.tsx` - Restablecer contraseña
+- `src/components/auth/ForgotPasswordForm.tsx` - Recuperar contrasena
+- `src/components/auth/ResetPasswordForm.tsx` - Restablecer contrasena
 - `src/components/auth/ProtectedRoute.tsx` - Rutas protegidas
-- `src/pages/AuthPages/ForgotPassword.tsx` - Página recuperar contraseña
-- `src/pages/AuthPages/ResetPassword.tsx` - Página restablecer contraseña
+- `src/pages/AuthPages/ForgotPassword.tsx` - Página recuperar contrasena
+- `src/pages/AuthPages/ResetPassword.tsx` - Página restablecer contrasena
 - `src/App.tsx` - Configuración de rutas y contextos
 - `src/layout/AppHeader.tsx` - Menú de usuario y logout
 
 **Rutas disponibles:**
 - `/login` - Iniciar sesión
 - `/register` - Registro de usuario
-- `/forgot-password` - Recuperar contraseña
-- `/reset-password?token=...` - Restablecer contraseña
+- `/forgot-password` - Recuperar contrasena
+- `/reset-password?token=...` - Restablecer contrasena
 - Todas las demás rutas están protegidas y requieren autenticación
 
 ## 🔒 Características de Seguridad
@@ -157,12 +157,12 @@ SMTP_PASS=tu_contraseña_de_aplicacion_gmail
 
 ## 🔧 Configuración de Email
 
-Para la recuperación de contraseña, configura tu proveedor de email:
+Para la recuperación de contrasena, configura tu proveedor de email:
 
 ### Gmail
 1. Habilita la autenticación de 2 factores
-2. Genera una contraseña de aplicación
-3. Usa esa contraseña en `SMTP_PASS`
+2. Genera una contrasena de aplicación
+3. Usa esa contrasena en `SMTP_PASS`
 
 ### Otros proveedores
 - **Outlook:** `smtp-mail.outlook.com:587`

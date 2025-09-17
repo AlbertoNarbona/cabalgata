@@ -833,7 +833,7 @@ export default function Recibos({tipo}: {tipo: string}) {
                               onChange={(e) => actualizarRecibo(recibo.id.toString(), 'importe', parseFloat(e.target.value) || 0)}
                               className="text-sm border-gray-200 dark:border-gray-700 focus:border-blue-400 focus:ring-blue-400 dark:focus:border-blue-500 transition-colors pr-8"
                               placeholder="0.00"
-                              step="0.01"
+                              step={0.01}
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
                           </div>
@@ -1199,7 +1199,7 @@ export default function Recibos({tipo}: {tipo: string}) {
                   ...nuevoPago, 
                   cantidad: parseFloat(e.target.value)
                 })}
-                step="0.01"
+                step={0.01}
                 max={reciboSeleccionado ? (Number(reciboSeleccionado.importe) - getTotalPagado(reciboSeleccionado.id)).toString() : undefined}
                 required={true}
               />

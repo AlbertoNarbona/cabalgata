@@ -32,7 +32,7 @@ const registerLimiter = rateLimit({
   }
 });
 
-// Rate limiting para recuperar contraseña
+// Rate limiting para recuperar contrasena
 const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3, // máximo 3 intentos por IP cada hora
@@ -99,11 +99,11 @@ const loginValidation = [
     .withMessage('El usuario debe tener entre 3 y 50 caracteres')
     .trim()
     .escape(),
-  body('contraseña')
+  body('contrasena')
     .notEmpty()
-    .withMessage('La contraseña es requerida')
+    .withMessage('La contrasena es requerida')
     .isLength({ min: 6 })
-    .withMessage('La contraseña debe tener al menos 6 caracteres')
+    .withMessage('La contrasena debe tener al menos 6 caracteres')
 ];
 
 const registerValidation = [
@@ -116,11 +116,11 @@ const registerValidation = [
     .withMessage('El usuario solo puede contener letras, números, guiones y guiones bajos')
     .trim()
     .escape(),
-  body('contraseña')
+  body('contrasena')
     .isLength({ min: 8 })
-    .withMessage('La contraseña debe tener al menos 8 caracteres')
+    .withMessage('La contrasena debe tener al menos 8 caracteres')
     .matches(/^(?=.*[a-z])(?=.*[A-Z]).*$/)
-    .withMessage('La contraseña debe contener al menos: 1 minúscula y 1 mayúscula'),
+    .withMessage('La contrasena debe contener al menos: 1 minúscula y 1 mayúscula'),
   body('email')
     .isEmail()
     .withMessage('Debe ser un email válido')
@@ -140,7 +140,7 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
       });
     }
 
-    const { usuario, contraseña } = req.body;
+    const { usuario, contrasena } = req.body;
 
     // Buscar usuario en la base de datos
     const query = 'SELECT * FROM Usuarios WHERE usuario = ?';
@@ -153,18 +153,18 @@ router.post('/login', authLimiter, loginValidation, async (req, res) => {
     if (users.length === 0) {
       return res.status(401).json({
         success: false,
-        message: 'Usuario o contraseña incorrectos'
+        message: 'Usuario o contrasena incorrectos'
       });
     }
 
     const user = users[0];
 
-    // Verificar contraseña
-    const isValidPassword = await bcrypt.compare(contraseña, user.contraseña);
+    // Verificar contrasena
+    const isValidPassword = await bcrypt.compare(contrasena, user.contrasena);
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,
-        message: 'Usuario o contraseña incorrectos'
+        message: 'Usuario o contrasena incorrectos'
       });
     }
 
@@ -220,7 +220,7 @@ router.post('/register', registerLimiter, registerValidation, async (req, res) =
       });
     }
 
-    const { usuario, contraseña, email } = req.body;
+    const { usuario, contrasena, email } = req.body;
 
     // Verificar si el usuario ya existe
     const existingUsers = await req.requestDB({
@@ -237,13 +237,13 @@ router.post('/register', registerLimiter, registerValidation, async (req, res) =
       });
     }
 
-    // Hash de la contraseña
+    // Hash de la contrasena
     const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(contraseña, saltRounds);
+    const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
 
     // Crear usuario
     const result = await req.requestDB({
-      query: 'INSERT INTO Usuarios (usuario, contraseña, email, fecha_registro) VALUES (?, ?, ?, NOW())',
+      query: 'INSERT INTO Usuarios (usuario, contrasena, email, fecha_registro) VALUES (?, ?, ?, NOW())',
       values: [usuario, hashedPassword, email],
       errMsg: 'Error al crear usuario'
     });
@@ -307,7 +307,7 @@ router.post('/forgot-password', resetLimiter, [
     if (users.length === 0) {
       return res.json({
         success: true,
-        message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
+        message: 'Si el email existe, recibirás instrucciones para restablecer tu contrasena'
       });
     }
 
@@ -331,12 +331,12 @@ router.post('/forgot-password', resetLimiter, [
       await emailTransporter.sendMail({
         from: process.env.SMTP_USER,
         to: email,
-        subject: 'Restablecer contraseña - Cabalgata',
+        subject: 'Restablecer contrasena - Cabalgata',
         html: `
-          <h2>Restablecer contraseña</h2>
-          <p>Has solicitado restablecer tu contraseña.</p>
+          <h2>Restablecer contrasena</h2>
+          <p>Has solicitado restablecer tu contrasena.</p>
           <p>Haz clic en el siguiente enlace para continuar:</p>
-          <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Restablecer contraseña</a>
+          <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Restablecer contrasena</a>
           <p>Este enlace expira en 1 hora.</p>
           <p>Si no solicitaste este cambio, ignora este email.</p>
         `
@@ -345,7 +345,7 @@ router.post('/forgot-password', resetLimiter, [
 
     res.json({
       success: true,
-      message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña'
+      message: 'Si el email existe, recibirás instrucciones para restablecer tu contrasena'
     });
 
   } catch (error) {
@@ -362,9 +362,9 @@ router.post('/reset-password', [
   body('token').notEmpty().withMessage('Token requerido'),
   body('nuevaContraseña')
     .isLength({ min: 8 })
-    .withMessage('La contraseña debe tener al menos 8 caracteres')
+    .withMessage('La contrasena debe tener al menos 8 caracteres')
     .matches(/^(?=.*[a-z])(?=.*[A-Z]).*$/)
-    .withMessage('La contraseña debe contener al menos: 1 minúscula y 1 mayúscula')
+    .withMessage('La contrasena debe contener al menos: 1 minúscula y 1 mayúscula')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -394,15 +394,15 @@ router.post('/reset-password', [
 
     const user = users[0];
 
-    // Hash de la nueva contraseña
+    // Hash de la nueva contrasena
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(nuevaContraseña, saltRounds);
 
-    // Actualizar contraseña y limpiar token
+    // Actualizar contrasena y limpiar token
     await req.requestDB({
-      query: 'UPDATE Usuarios SET contraseña = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?',
+      query: 'UPDATE Usuarios SET contrasena = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?',
       values: [hashedPassword, user.id],
-      errMsg: 'Error al actualizar contraseña'
+      errMsg: 'Error al actualizar contrasena'
     });
 
     res.json({
@@ -432,9 +432,9 @@ router.post('/change-password', verifyToken, [
   body('contraseñaActual').notEmpty().withMessage('Contraseña actual requerida'),
   body('nuevaContraseña')
     .isLength({ min: 8 })
-    .withMessage('La contraseña debe tener al menos 8 caracteres')
+    .withMessage('La contrasena debe tener al menos 8 caracteres')
     .matches(/^(?=.*[a-z])(?=.*[A-Z]).*$/)
-    .withMessage('La contraseña debe contener al menos: 1 minúscula y 1 mayúscula')
+    .withMessage('La contrasena debe contener al menos: 1 minúscula y 1 mayúscula')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -465,8 +465,8 @@ router.post('/change-password', verifyToken, [
 
     const user = users[0];
 
-    // Verificar contraseña actual
-    const isValidPassword = await bcrypt.compare(contraseñaActual, user.contraseña);
+    // Verificar contrasena actual
+    const isValidPassword = await bcrypt.compare(contraseñaActual, user.contrasena);
     if (!isValidPassword) {
       return res.status(400).json({
         success: false,
@@ -474,15 +474,15 @@ router.post('/change-password', verifyToken, [
       });
     }
 
-    // Hash de la nueva contraseña
+    // Hash de la nueva contrasena
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(nuevaContraseña, saltRounds);
 
-    // Actualizar contraseña
+    // Actualizar contrasena
     await req.requestDB({
-      query: 'UPDATE Usuarios SET contraseña = ? WHERE id = ?',
+      query: 'UPDATE Usuarios SET contrasena = ? WHERE id = ?',
       values: [hashedPassword, userId],
-      errMsg: 'Error al actualizar contraseña'
+      errMsg: 'Error al actualizar contrasena'
     });
 
     res.json({

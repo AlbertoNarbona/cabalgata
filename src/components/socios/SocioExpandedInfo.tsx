@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Socio, Pariente } from "../../services/sociosService";
 import InputField from "../form/input/InputField";
 import Button from "../ui/button/Button";

@@ -12,7 +12,7 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(false);
   const [formData, setFormData] = useState({
     usuario: '',
-    contraseña: ''
+    contrasena: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
@@ -29,10 +29,10 @@ export default function SignInForm() {
       newErrors.usuario = 'El usuario debe tener al menos 3 caracteres';
     }
 
-    if (!formData.contraseña) {
-      newErrors.contraseña = 'La contraseña es requerida';
-    } else if (formData.contraseña.length < 6) {
-      newErrors.contraseña = 'La contraseña debe tener al menos 6 caracteres';
+    if (!formData.contrasena) {
+      newErrors.contrasena = 'La contrasena es requerida';
+    } else if (formData.contrasena.length < 6) {
+      newErrors.contrasena = 'La contrasena debe tener al menos 6 caracteres';
     }
 
     setErrors(newErrors);
@@ -78,7 +78,7 @@ export default function SignInForm() {
               Iniciar Sesión
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ingresa tu usuario y contraseña para acceder
+              Ingresa tu usuario y contrasena para acceder
             </p>
           </div>
           <div>
@@ -106,10 +106,10 @@ export default function SignInForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Ingresa tu contraseña"
-                      value={formData.contraseña}
-                      onChange={(e) => handleInputChange('contraseña', e.target.value)}
-                      className={errors.contraseña ? 'border-red-500' : ''}
+                      placeholder="Ingresa tu contrasena"
+                      value={formData.contrasena}
+                      onChange={(e) => handleInputChange('contrasena', e.target.value)}
+                      className={errors.contrasena ? 'border-red-500' : ''}
                       disabled={isLoading}
                     />
                     <span
@@ -123,8 +123,8 @@ export default function SignInForm() {
                       )}
                     </span>
                   </div>
-                  {errors.contraseña && (
-                    <p className="mt-1 text-sm text-red-500">{errors.contraseña}</p>
+                  {errors.contrasena && (
+                    <p className="mt-1 text-sm text-red-500">{errors.contrasena}</p>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
@@ -138,7 +138,7 @@ export default function SignInForm() {
                     to="/forgot-password"
                     className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
-                    ¿Olvidaste tu contraseña?
+                    ¿Olvidaste tu contrasena?
                   </Link>
                 </div>
                 <div>

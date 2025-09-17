@@ -20,7 +20,7 @@ const DocumentoCombinado = ({
   <Document>
     {documentos({socio, dni, pariente})
       .filter((doc) => documentosSeleccionados.includes(doc.id))
-      .map((doc, index) => (
+      .map((doc) => (
         <Page
           key={doc.id}
           style={{ width: '100%', height: '100%', padding: 60 }}>

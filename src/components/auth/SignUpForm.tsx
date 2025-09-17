@@ -10,7 +10,7 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     usuario: '',
-    contraseña: '',
+    contrasena: '',
     email: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -41,13 +41,13 @@ export default function SignUpForm() {
       newErrors.email = 'Debe ser un email válido';
     }
 
-    // Validar contraseña (criterios de seguridad)
-    if (!formData.contraseña) {
-      newErrors.contraseña = 'La contraseña es requerida';
-    } else if (formData.contraseña.length < 8) {
-      newErrors.contraseña = 'La contraseña debe tener al menos 8 caracteres';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z]).*$/.test(formData.contraseña)) {
-      newErrors.contraseña = 'La contraseña debe contener al menos: 1 minúscula y 1 mayúscula';
+    // Validar contrasena (criterios de seguridad)
+    if (!formData.contrasena) {
+      newErrors.contrasena = 'La contrasena es requerida';
+    } else if (formData.contrasena.length < 8) {
+      newErrors.contrasena = 'La contrasena debe tener al menos 8 caracteres';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z]).*$/.test(formData.contrasena)) {
+      newErrors.contrasena = 'La contrasena debe contener al menos: 1 minúscula y 1 mayúscula';
     }
 
     
@@ -144,11 +144,11 @@ export default function SignUpForm() {
                   </Label>
                   <div className="relative">
                     <Input
-                      placeholder="Crea una contraseña segura"
+                      placeholder="Crea una contrasena segura"
                       type={showPassword ? "text" : "password"}
-                      value={formData.contraseña}
-                      onChange={(e) => handleInputChange('contraseña', e.target.value)}
-                      className={errors.contraseña ? 'border-red-500' : ''}
+                      value={formData.contrasena}
+                      onChange={(e) => handleInputChange('contrasena', e.target.value)}
+                      className={errors.contrasena ? 'border-red-500' : ''}
                       disabled={isLoading}
                     />
                     <span
@@ -162,8 +162,8 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
-                  {errors.contraseña && (
-                    <p className="mt-1 text-sm text-red-500">{errors.contraseña}</p>
+                  {errors.contrasena && (
+                    <p className="mt-1 text-sm text-red-500">{errors.contrasena}</p>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
                     Mínimo 8 caracteres con al menos una mayúscula y una minúscula

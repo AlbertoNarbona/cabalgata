@@ -2,12 +2,12 @@ const API_BASE_URL = 'http://localhost:3001/api';
 
 export interface LoginCredentials {
   usuario: string;
-  contraseña: string;
+  contrasena: string;
 }
 
 export interface RegisterData {
   usuario: string;
-  contraseña: string;
+  contrasena: string;
   email: string;
 }
 

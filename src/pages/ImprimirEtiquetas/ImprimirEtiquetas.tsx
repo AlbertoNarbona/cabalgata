@@ -67,7 +67,7 @@ export default function ImprimirEtiquetas() {
   }, [socios, busqueda]);
 
   // Combinar socios con sus parientes
-  const sociosConParientes: SocioConParientes[] = socios.map((socio) => ({
+  const sociosConParientes = socios.map((socio) => ({
     ...socio,
     parientes: parientes.filter((pariente) => pariente.socio_id === socio.id),
   }));

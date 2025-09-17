@@ -34,16 +34,16 @@ export default function ResetPasswordForm() {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    // Validar contraseña (criterios de seguridad)
+    // Validar contrasena (criterios de seguridad)
     if (!formData.nuevaContraseña) {
-      newErrors.nuevaContraseña = 'La contraseña es requerida';
+      newErrors.nuevaContraseña = 'La contrasena es requerida';
     } else if (formData.nuevaContraseña.length < 8) {
-      newErrors.nuevaContraseña = 'La contraseña debe tener al menos 8 caracteres';
+      newErrors.nuevaContraseña = 'La contrasena debe tener al menos 8 caracteres';
     }
 
-    // Validar confirmación de contraseña
+    // Validar confirmación de contrasena
     if (!formData.confirmarContraseña) {
-      newErrors.confirmarContraseña = 'Debes confirmar la contraseña';
+      newErrors.confirmarContraseña = 'Debes confirmar la contrasena';
     } else if (formData.nuevaContraseña !== formData.confirmarContraseña) {
       newErrors.confirmarContraseña = 'Las contraseñas no coinciden';
     }
@@ -114,7 +114,7 @@ export default function ResetPasswordForm() {
               Restablecer Contraseña
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.
+              Ingresa tu nueva contrasena para restablecer el acceso a tu cuenta.
             </p>
           </div>
           <div>
@@ -127,7 +127,7 @@ export default function ResetPasswordForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Ingresa tu nueva contraseña"
+                      placeholder="Ingresa tu nueva contrasena"
                       value={formData.nuevaContraseña}
                       onChange={(e) => handleInputChange('nuevaContraseña', e.target.value)}
                       className={errors.nuevaContraseña ? 'border-red-500' : ''}
@@ -159,7 +159,7 @@ export default function ResetPasswordForm() {
                   <div className="relative">
                     <Input
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirma tu nueva contraseña"
+                      placeholder="Confirma tu nueva contrasena"
                       value={formData.confirmarContraseña}
                       onChange={(e) => handleInputChange('confirmarContraseña', e.target.value)}
                       className={errors.confirmarContraseña ? 'border-red-500' : ''}
@@ -196,7 +196,7 @@ export default function ResetPasswordForm() {
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                ¿Recordaste tu contraseña? {""}
+                ¿Recordaste tu contrasena? {""}
                 <Link
                   to="/login"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"

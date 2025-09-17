@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             toast.error(error.msg);
           });
         } else {
-          toast.error(response.message || 'Error al restablecer contraseña');
+          toast.error(response.message || 'Error al restablecer contrasena');
         }
         return false;
       }
@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             toast.error(error.msg);
           });
         } else {
-          toast.error(response.message || 'Error al cambiar contraseña');
+          toast.error(response.message || 'Error al cambiar contrasena');
         }
         return false;
       }

@@ -64,7 +64,7 @@ export default function ForgotPasswordForm() {
                 Correo Enviado
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña en breve.
+                Si el email existe en nuestro sistema, recibirás instrucciones para restablecer tu contrasena en breve.
               </p>
             </div>
             <div className="space-y-4">
@@ -102,7 +102,7 @@ export default function ForgotPasswordForm() {
               Recuperar Contraseña
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ingresa tu email y te enviaremos instrucciones para restablecer tu contraseña.
+              Ingresa tu email y te enviaremos instrucciones para restablecer tu contrasena.
             </p>
           </div>
           <div>
@@ -145,7 +145,7 @@ export default function ForgotPasswordForm() {
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                ¿Recordaste tu contraseña? {""}
+                ¿Recordaste tu contrasena? {""}
                 <Link
                   to="/login"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
