@@ -436,12 +436,12 @@ export default function Socios() {
                   >
                     👥 Parientes
                   </button>
-                  <button
+                  {/*<button
                     onClick={(e) => { e.stopPropagation(); imprimirEtiqueta(socio); }}
                     className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400"
                   >
                     🏷️ Etiqueta
-                  </button>
+                  </button>*/}
                   <button
                     onClick={(e) => { e.stopPropagation(); confirmarEliminacionSocio(socio); }}
                     className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400"
